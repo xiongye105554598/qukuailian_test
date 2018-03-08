@@ -1,0 +1,17 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查看我的保障人
+    [Arguments]    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据offset和limit查询用户的保障人
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/getinuserdlist    ${EMPTY}
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    [Return]    ${ResponseBody}

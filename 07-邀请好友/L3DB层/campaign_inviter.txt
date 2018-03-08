@@ -1,0 +1,101 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+查询绑定关系
+    [Arguments]    ${inviterPhone}    ${userPhone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据inviterId和userId查询绑定关系
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号
+    ...
+    ...    【返回值】 campaignInfoTuple：绑定关系信息
+    连接数据库
+    ${inviterId}    根据手机号查UserId    ${inviterPhone}
+    ${userId}    根据手机号查UserId    ${userPhone}
+    log    ${inviterId}
+    log    ${userId}
+    #查询绑定信息
+    ${campaignInfoTuple}    Query    SELECT state,used,product_id FROM `campaign_inviter` WHERE inviter_id=${inviterId} AND user_id=${userId};
+    [Return]    ${campaignInfoTuple}
+
+校验注册后的绑定关系
+    [Arguments]    ${inviterPhone}    ${userPhone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 被邀请者注册成功后，校验绑定关系中各字段（注意：查询绑定关系前，先休眠0.5s，以防自动化程序太快，校验DB时，数据还没记录成功）
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号
+    ...
+    ...    【返回值】 无
+    Sleep    1s
+    ${campaignInfoTuple}    查询绑定关系    ${inviterPhone}    ${userPhone}
+    log    ${campaignInfoTuple[0]}
+    Should Be Equal As Strings    0    ${campaignInfoTuple[0][0]}    #校验state，0：已注册
+    Should Be Equal As Strings    0    ${campaignInfoTuple[0][1]}    #校验used，0：未使用
+    Should Be Equal As Strings    None    ${campaignInfoTuple[0][2]}    #校验productId，None：未加入
+
+校验加入计划后的绑定关系
+    [Arguments]    ${inviterPhone}    ${userPhone}    ${planId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 被邀请者加入计划后，校验绑定关系中各字段
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号
+    ...
+    ...    【返回值】 无
+    ${campaignInfoTuple}    查询绑定关系    ${inviterPhone}    ${userPhone}
+    log    ${campaignInfoTuple[0]}
+    Should Be Equal As Strings    1    ${campaignInfoTuple[0][0]}    #校验state，1：已加入
+    Should Be Equal As Strings    1    ${campaignInfoTuple[0][1]}    #校验used，1：已使用
+    Should Be Equal As Strings    ${planId}    ${campaignInfoTuple[0][2]}    #校验productId，加入的计划
+
+校验过期后的绑定关系
+    [Arguments]    ${inviterPhone}    ${userPhone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验绑定关系是否过期
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号
+    ...
+    ...    【返回值】 无
+    ${campaignInfoTuple}    查询绑定关系    ${inviterPhone}    ${userPhone}
+    log    ${campaignInfoTuple[0]}
+    Should Be Equal As Strings    2    ${campaignInfoTuple[0][0]}    #校验state，2：已失效
+    Should Be Equal As Strings    0    ${campaignInfoTuple[0][1]}    #校验used，0：未使用
+    Should Be Equal As Strings    None    ${campaignInfoTuple[0][2]}    #校验productId，None：未加入
+
+校验绑定关系不存在
+    [Arguments]    ${inviterPhone}    ${userPhone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验绑定关系是否不存在，记录条数为0
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号
+    ...
+    ...    【返回值】 无
+    ${campaignInfoTuple}    查询绑定关系    ${inviterPhone}    ${userPhone}
+    ${Len}    Get length    ${campaignInfoTuple}
+    Should Be Equal As Strings    0    ${Len}
+
+修改邀请表中的过期时间
+    [Arguments]    ${inviterPhone}    ${userPhone}    ${days}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 将邀请表中的过期时间修改为30天前
+    ...
+    ...    【参数】 inviterPhone：邀请者的手机号；userPhone：被邀请者的手机号；days：修改天数
+    ...
+    ...    【返回值】 无
+    连接数据库
+    ${inviterId}    根据手机号查UserId    ${inviterPhone}
+    ${userId}    根据手机号查UserId    ${userPhone}
+    #查询过期时间
+    ${expireTimeTuple}    Query    SELECT expire_at FROM `campaign_inviter` WHERE inviter_id="${inviterId}" AND user_id="${userId}";
+    #得到新的过期时间
+    ${expire_at}    set variable    ${expireTimeTuple[0][0]}
+    ${new_expire_at}    Evaluate    ${expire_at}-${days}*24*60*60
+    #更新过期时间
+    Execute Sql String    update `campaign_inviter` set expire_at=${new_expire_at} WHERE inviter_id="${inviterId}" AND user_id="${userId}";

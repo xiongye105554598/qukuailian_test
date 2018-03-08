@@ -1,0 +1,81 @@
+*** Settings ***
+Resource          ../通用/L3DB层/account_phone.txt
+Library           redis.Redis    ${redisHost}    ${redisPort}
+
+*** Keywords ***
+查询密码错误次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id查询密码错误次数，login_failed_userid记录密码错误次数
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    ${times}    redis.Redis.get    login_failed_${user_id}
+    log    ${times}
+
+清除密码错误次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id查询删除错误次数，login_failed_userid记录密码错误次数
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    redis.Redis.delete    login_failed_${user_id}
+
+解除密码错误帐号锁定
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id删除密码锁定，account_lock_userid记录用户是否因为密码错误次数过多而锁定
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    redis.Redis.delete    account_lock_${user_id}
+
+查询验证码错误次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据phone查询验证码错误次数，code_error_phone记录验证码错误次数
+    ${times}    redis.Redis.get    code_error_${phone}
+    log    ${times}
+
+清除验证码错误次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据phone删除验证码错误次数，code_error_phone记录验证码错误次数
+    redis.Redis.delete    code_error_${phone}
+
+解除验证码错误帐号锁定
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据phone删除验证码锁定，phone_lock_phone记录用户是否因为验证码错误次数过多而锁定
+    redis.Redis.delete    phone_lock_${phone}
+
+清除加入计划人数
+    [Arguments]    ${planId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【说明】hold_count_${planId}记录加入计划人数
+    redis.Redis.delete    hold_count_${planId}
+
+查询短信验证码次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id查询密码错误次数，login_failed_userid记录密码错误次数
+    #得到当前日期
+    ${yy}    ${mm}    ${dd} =    Get Time    year,month,day
+    ${times}    redis.Redis.get    ${yy}${mm}${dd}_${phone}_sms_count
+    log    ${yy}${mm}${dd}_${phone}_sms_count
+    log    ${times}
+
+清除短信验证码次数
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id查询密码错误次数，login_failed_userid记录密码错误次数
+    #得到当前日期
+    ${yy}    ${mm}    ${dd} =    Get Time    year,month,day
+    redis.Redis.delete    ${yy}${mm}${dd}_${phone}_sms_count

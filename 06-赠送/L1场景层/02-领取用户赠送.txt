@@ -1,0 +1,206 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/领取赠送.txt
+Resource          ../L3DB层/gift.txt
+Resource          ../L3DB层/account_gift.txt
+Resource          ../../资源/redis.txt
+Resource          ../L2接口层/加入赠送计划.txt
+Resource          ../../通用/L2接口层/保障人.txt
+Resource          ../L3DB层/hold.txt
+Resource          ../../资源/清理数据.txt
+Resource          ../L2接口层/赠送支付.txt
+Resource          ../L2接口层/打开赠送页面.txt
+
+*** Test Cases ***
+领取赠送成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660001
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    2277    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    zjwy_product    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #校验left_amount
+    校验gift的剩余金额    ${赠送id}
+
+领取时赠送已领完
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送名额已领完，领取失败
+    ...
+    ...    【前提】领取人已注册未加入计划；2334已领完且均加入
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23866660001
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送id}    set variable    2334
+    ${赠送token}    set variable    G_A7Ti-BY3za_bteOEfcjdpV9PnqlKaP
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}    来晚了，已抢光    #无名额的提示文案
+    #校验account_gift
+    校验领取不成功的account_gift    ${用户手机号}    ${赠送id}
+
+领取时赠送已过期
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送过期，领取赠送失败
+    ...
+    ...    【前提】领取人已注册未加入计划；2354赠送已过期
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23866660001
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送id}    set variable    2637
+    ${赠送token}    set variable    bXL--S2pN5f4h2Uz8v9CMf4bq4HJWJCo
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}    来晚了，该赠送已过期    #已过期的提示文案
+    #校验account_gift
+    校验领取不成功的account_gift    ${用户手机号}    ${赠送id}
+
+领取人已加入计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】已加入计划，领取赠送失败
+    ...
+    ...    【前提】赠送者已注册，领取人已加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    2277    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    zjwy_product    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}    你已加入该计划    #已加入的提示文案
+    #校验account_gift
+    校验领取不成功的account_gift    ${用户手机号}    ${赠送id}
+
+赠送者本人领取
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】本人不会领取赠送，只做页面跳转302
+    ...
+    ...    【前提】领取人和赠送是同一人，已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    zjwy_product    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送302    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}
+    #校验account_gift
+    校验领取不成功的account_gift    ${用户手机号}    ${赠送id}
+
+领取时验证码错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】验证码错误，领取赠送失败，用户也不会被注册
+    ...
+    ...    【前提】领取人已注册
+    [Tags]    yuewang
+    ${赠送手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660001
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    #登录获取Cookie
+    获取登录态    ${赠送手机号}    2277
+    #赠送前预设账户余额
+    设置账户余额    ${赠送手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    zjwy_product    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #领取赠送    #gift_id    #token    #领取手机号    #错误的验证码
+    领取赠送不登录    ${赠送id}    ${赠送token}    ${用户手机号}    1122    验证码错误，请重新输入    #验证码错误的提示文案
+    #校验account_gift
+    校验领取不成功的account_gift    ${用户手机号}    ${赠送id}
+    #清理redis
+    查询验证码错误次数    ${用户手机号}
+    清除验证码错误次数    ${用户手机号}
+    解除验证码错误帐号锁定    ${用户手机号}
+
+赠送过期退款
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】用户赠送3份计划，1份领取已加入，1份领取未加入，1份未领取。赠送过期，用户退款
+    ...
+    ...    【前提】赠送者已注册，领取人1和领取人2未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户1手机号}    set variable    23866660001
+    ${用户2手机号}    set variable    23866660002
+    ${验证码1}    根据手机号生成验证码    ${用户1手机号}
+    ${验证码2}    根据手机号生成验证码    ${用户2手机号}
+    ${赠送份数}    set variable    3
+    ${赠送单价}    set variable    900
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    2277    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    zjwy_product    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #第一个领取并加入
+    获取登录态    ${用户1手机号}    ${验证码1}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户1手机号}    ${验证码1}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #加入前清理数据
+    清理赠送加入数据    ${用户1手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    true
+    #第二个用户领取未加入
+    获取登录态    ${用户2手机号}    ${验证码2}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户2手机号}    ${验证码2}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #修改过期时间
+    修改赠送过期时间    ${赠送id}
+    #刷新页面让赠送过期
+    打开赠送页面    ${赠送id}    ${赠送token}
+    #校验领取状态
+    校验领取成功的account_gift    ${用户1手机号}    ${赠送id}    2
+    校验领取成功的account_gift    ${用户2手机号}    ${赠送id}    3
+    #校验退款
+    ${退款金额}    Evaluate    ${赠送单价}*2
+    校验账户余额    ${赠送者手机号}    ${退款金额}
+    [Teardown]    清理赠送加入数据    ${用户1手机号}    ${产品ID}    ${赠送id}

@@ -1,0 +1,9 @@
+*** Settings ***
+Resource          config.txt
+Library           pymysql
+Library           DatabaseLibrary
+
+*** Keywords ***
+连接数据库
+    [Documentation]    【说明】 连接到数据库
+    Connect To Database    pymysql    ${db}    ${dbuser}    ${dbpassword}    ${dbhost}    ${dbpost}

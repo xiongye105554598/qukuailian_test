@@ -1,0 +1,60 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查询保障人列表
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询保障人列表，返回该用户的所有保障人信息
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 ResponseBody：查询到的保障人信息
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /ajax/account/getinuserdlist
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    [Return]    ${ResponseBody}
+
+校验保障人列表为空
+    [Arguments]    ${保障人信息}
+    [Documentation]    【作者】 wsong
+    ...
+    ...    【作用】 保障人列表为空，校验查询保障人接口返回的data数组的长度是否为0
+    ...
+    ...    【参数】 保障人信息：查询保障人列表接口返回的响应
+    ...
+    ...    【返回值】 无
+    log    ${保障人信息}
+    ${DataValue}    Get Json Value    ${保障人信息}    /data
+    ${DataArray}    Parse Json    ${DataValue}
+    ${DataLength}    Get length    ${DataArray}
+    Should Be Equal As Strings    0    ${DataLength}    #校验保障人信息数组长度
+
+校验保障人列表信息
+    [Arguments]    ${保障人信息}    ${保障人个数}    @{保障人列表List}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验保障人列表返回的信息中个数和保障人ID是否正确
+    ...
+    ...    【参数】 保障人信息：查询接口返回的结果；保障人个数；保障人列表List：包含列表中所有保障人的ID
+    ...
+    ...    【返回值】 无
+    log    ${保障人信息}
+    ${DataValue}    Get Json Value    ${保障人信息}    /data
+    ${DataArray}    Parse Json    ${DataValue}
+    ${DataLength}    Get length    ${DataArray}
+    #校验保障人信息个数
+    Should Be Equal As Strings    ${保障人个数}    ${DataLength}
+    ${i}    set variable    0
+    #校验每个保障人信息的ID
+    : FOR    ${保障人ID}    IN    @{保障人列表List}
+    \    ${保障人信息}    set variable    ${DataArray[${i}]}
+    \    ${保障人信息}    Stringify Json    ${保障人信息}
+    \    #获取保障人ID
+    \    ${InsuredId}    Get Json Value    ${保障人信息}    /insured_id
+    \    Should Be Equal As Strings    ${InsuredId}    ${保障人ID}
+    \    ${i}    Evaluate    ${i}+1

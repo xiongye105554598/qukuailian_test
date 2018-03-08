@@ -1,0 +1,39 @@
+*** Settings ***
+Resource          ../L2接口层/消息通知.txt
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../../资源/清理数据.txt
+
+*** Test Cases ***
+查看我的消息通知
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看消息通知
+    ...
+    ...    【前提】用户已注册，消息通知个数大于等于20
+    [Tags]    yuewang
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #获取用户消息通知    #查看    #offset    #limt    #校验key    #校验value
+    ${body}    查看我的消息通知    0    20    success    true
+    #校验消息通知
+    校验我的消息通知不为空    ${body}    20
+
+我的消息通知为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看消息通知
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #清理用户消息
+    清理用户消息为0    ${手机号}
+    #获取用户消息通知    #查看    #offset    #limt    #校验key    #校验value
+    ${body}    查看我的消息通知    0    20    success    true
+    #校验消息通知
+    校验我的消息通知为空    ${body}

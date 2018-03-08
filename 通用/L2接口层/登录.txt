@@ -1,0 +1,104 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../资源/全局变量.txt
+Resource          ../../资源/字符串处理.txt
+Resource          ../L3DB层/account_phone.txt
+Resource          通用.txt
+
+*** Keywords ***
+获取登录态
+    [Arguments]    ${username}    ${verifycode}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 使用验证码登录，将登录后得到的Cookie存储到全局变量中，将登录后的手机号和user_id也写进全局变量
+    ...
+    ...    【参数】 username：手机号、verifycode：验证码
+    ...
+    ...    【返回值】无
+    log    ${username}
+    log    ${verifycode}
+    #获取Http header各字段
+    ${ResponseCookie}    获取登录页Cookie
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${GuestId}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取guest_id的值
+    ${AjaxSign}    set variable    1475909004131asignkeyck    # 自定义AjaxSign的值
+    #设置Http域名和header
+    设置Http域名
+    Set Request Header    Cookie    PHPSESSID=${PHPSESSID}; guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign}
+    Set Request Header    Ajax-Sign    ${AjaxSign}
+    #发送请求并校验响应
+    发送POST请求    /ajax/account/login    LoginForm%5Btype%5D=2&LoginForm%5Busername%5D=${username}&LoginForm%5Bpassword%5D=&LoginForm%5Bverifycode%5D=${verifycode}    #使用验证码登录
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseCookie}    Get Response Header    Set-Cookie
+    log    ${ResponseCookie}
+    #设置全局变量
+    Set Global Variable    ${ResponseCookie}    ${ResponseCookie}
+    Set Global Variable    ${AjaxSign}    ${AjaxSign}
+    Set Global Variable    ${GuestId}    ${GuestId}
+    #把手机号写进全局变量
+    Set Global Variable    ${LoginPhone}    ${username}
+    #把user_id写进全局变量
+    ${Id}    根据手机号查UserId    ${username}
+    Set Global Variable    ${UserId}    ${Id}
+    log    ${UserId}
+
+获取登录页Cookie
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 进入登录页，获取页面返回的Cookie
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】ResponseCookie：响应的Cookie
+    设置Http域名
+    发送GET请求    /login/login
+    校验Http返回码    200
+    ${ResponseCookie}    Get Response Header    Set-Cookie
+    log    ${ResponseCookie}
+    [Return]    ${ResponseCookie}
+
+获取控制台登录页csrf值
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 进入控制台登录页，获取页面返回的csrfCookie和csrfBody
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】csrfCookie：控制台接口用；csrfBody：csrfBody控制台接口用
+    设置Http域名
+    发送GET请求    /admin/default/login
+    #获取Body中csrf值
+    ${ResponseBody}    Get Response Body
+    ${csrfBody}    获取Body中的csrf值    ${ResponseBody}
+    #获取Header中csrf值
+    ${ResponseCookie}    Get Response Header    Set-Cookie
+    ${csrfCookie}    获取列表中第一个Cookie值    ${ResponseCookie[2]}
+    log    ${csrfCookie}
+    [Return]    ${csrfCookie}    ${csrfBody}
+
+获取Body中的csrf值
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 <meta name="csrf-token" content="aGxKZnFlRE8YPnMcITACPlBeJBASDysfAwUcDwMwBS4.KTA0HAwhPA==">从这个串中获取csrf-token值
+    ...
+    ...    【参数】 ResponseBody：控制台登录页返回的Body
+    ...
+    ...    【返回值】${CsrfTokenTuple[2]}：csrfBody <meta name="csrf-token" content="aGxKZnFlRE8YPnMcITACPlBeJBASDysfAwUcDwMwBS4.KTA0HAwhPA==">
+    ${CsrfTokenString}    Fetch From Right    ${ResponseBody}    csrf-token
+    log    ${CsrfTokenString}
+    ${CsrfTokenTuple}    Split String    ${CsrfTokenString}    "
+    log    ${CsrfTokenTuple[2]}
+    [Return]    ${CsrfTokenTuple[2]}
+
+自动生成验证码登录
+    [Arguments]    ${用户手机号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据手机号，获得验证码，使用验证码登录，将登录后得到的Cookie存储到全局变量中，将登录后的手机号和user_id也写进全局变量
+    ...
+    ...    【参数】 用户手机号
+    ...
+    ...    【返回值】 无
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    获取登录态    ${用户手机号}    ${验证码}

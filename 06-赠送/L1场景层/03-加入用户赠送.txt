@@ -1,0 +1,384 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/领取赠送.txt
+Resource          ../L3DB层/gift.txt
+Resource          ../L3DB层/account_gift.txt
+Resource          ../../资源/redis.txt
+Resource          ../L2接口层/加入赠送计划.txt
+Resource          ../../通用/L2接口层/保障人.txt
+Resource          ../L3DB层/hold.txt
+Resource          ../../资源/清理数据.txt
+Resource          ../L2接口层/赠送支付.txt
+Resource          ../../资源/Http请求.txt
+
+*** Test Cases ***
+领取并加入成功9元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功并加入成功，，赠送金额=9，直接加入
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #加入前清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    true
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    2    #领取且加入state=2
+    #校验left_amount
+    校验gift的剩余金额    ${赠送id}
+    #校验amount
+    校验gift的已加金额    ${赠送id}
+    #校验hold
+    校验加入成功的hold    ${用户手机号}    ${赠送id}    ${产品ID}    ${保障人Id}    ${赠送单价}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取并加入成功10元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功并加入成功，，赠送金额>9，直接加入
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    1000
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    true
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    2    #领取且加入state=2
+    #校验left_amount
+    校验gift的剩余金额    ${赠送id}
+    #校验amount
+    校验gift的已加金额    ${赠送id}
+    #校验hold
+    校验加入成功的hold    ${用户手机号}    ${赠送id}    ${产品ID}    ${保障人Id}    ${赠送单价}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取并微信加入成功8元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功并加入成功，赠送金额<9，需付费（微信支付）
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    800
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为100（因为赠送金额不够）
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    微信支付加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    true
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    2    #领取且加入state=2
+    #校验left_amount
+    校验gift的剩余金额    ${赠送id}
+    #校验amount
+    校验gift的已加金额    ${赠送id}
+    #校验hold
+    校验加入成功的hold    ${用户手机号}    ${赠送id}    ${产品ID}    ${保障人Id}    900    #保障金一定是9元
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取成功加入时已过期
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功，加入时赠送已过期
+    ...
+    ...    【前提】领取人已注册，已领取赠送2396且过期
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23866660003
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送id}    set variable    2396
+    ${赠送token}    set variable    c9qfX9BHfjvvcpZ_icfn0YVZlX9EWIuX
+    ${产品ID}    set variable    zjwy_product
+    ${保障人姓名}    set variable    零零三
+    ${保障人身份证}    set variable    330101198801011557
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码}    该赠送已过期    #提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    3    #领取已过期state=3
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    2351    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "赠送已失效"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取成功加入时保障人为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功，加入时保障人为空
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    \    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "请选择保障人"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取成功加入时保障人错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功，加入时保障人有误（不是该用户的保障人）
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${产品ID}    set variable    zjwy_product
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    333    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "请选择保障人"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取成功加入时保障人已加入
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功，加入时保障人已加入计划
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划；保障人已加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${产品ID}    set variable    zjwy_product
+    ${保障人姓名}    set variable    王老大
+    ${保障人身份证号}    set variable    511381199002210287
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "保障人已经加入该计划"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+领取成功产品ID不正确
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】领取赠送成功，加入时产品ID不正确
+    ...
+    ...    【前提】新赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${产品ID}    set variable    zjwy_product
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${用户验证码}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    my_product    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "产品不存在"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    [Teardown]    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+
+加入未领取的赠送
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入赠送计划，用户但未领取该赠送
+    ...
+    ...    【前提】赠送者已注册；领取人已注册未加入计划
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23837255712
+    ${用户手机号}    set variable    23866660002
+    ${赠送者验证码}    根据手机号生成验证码    ${赠送者手机号}
+    ${用户验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    10
+    ${赠送单价}    set variable    900
+    ${产品ID}    set variable    zjwy_product
+    ${保障人姓名}    set variable    巴拉拉
+    ${保障人身份证号}    set variable    370101198101011959
+    #登录获取Cookie
+    获取登录态    ${赠送者手机号}    ${赠送者验证码}    #赠送和领取的不能是同一人
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #新建赠送
+    ${赠送id}    ${赠送token}    新建赠送返回gift_id和token    ${产品ID}    app    wx    1
+    ...    ${赠送份数}    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${用户验证码}
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${保障人姓名}    ${保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品ID}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    false
+    #检查message
+    校验Http ResponseBody    message    "赠送已失效"
+    #校验hold
+    校验加入不成功的hold    ${用户手机号}    ${赠送id}
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品ID}    ${赠送id}

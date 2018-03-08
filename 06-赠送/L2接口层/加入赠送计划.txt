@@ -1,0 +1,51 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/支付.txt
+
+*** Keywords ***
+加入用户赠送计划
+    [Arguments]    ${product_id}    ${client}    ${pay_way}    ${ext_gift_id}    ${ext_insured_id}    ${redirect_url}
+    ...    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】产品id，客户端，支付方式，赠送id，保障人id，跳转链接，校验key、校验value
+    ...
+    ...    【说明】直接加入赠送计划（即赠送金额>=9元）
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/order/pay    product_id=${product_id}&order_type=1&client=${client}&ext%5Bhold_id%5D=&ext%5Bgift_id%5D=${ext_gift_id}&redirect_url=${redirect_url}&ext%5Binsured_id%5D=${ext_insured_id}&pay-way=${pay_way}&tips=on    #参与的order_type是1
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+
+微信支付加入用户赠送计划
+    [Arguments]    ${product_id}    ${client}    ${pay_way}    ${ext_gift_id}    ${ext_insured_id}    ${redirect_url}
+    ...    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】产品id，客户端，支付方式，赠送id，保障人id，跳转链接，校验key、校验value
+    ...
+    ...    【说明】付费加入赠送计划，使用微信支付（即赠送金额<9元）
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/order/pay    product_id=${product_id}&order_type=1&client=${client}&ext%5Bhold_id%5D=&ext%5Bgift_id%5D=${ext_gift_id}&redirect_url=${redirect_url}&ext%5Binsured_id%5D=${ext_insured_id}&pay-way=${pay_way}&tips=on    #参与的order_type是1
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    ${Value}    Get Json Value    ${ResponseBody}    /${key}
+    Run Keyword If    "${Value}"=="true"    微信Ping++支付    ${ResponseBody}
+
+加入控制台赠送计划
+    [Arguments]    ${phone}    ${code}    ${name}    ${idcard}    ${gift_id}    ${gift_token}
+    ...    ${product_id}    ${client}    ${pay_way}    ${redirect_url}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】赠送id、赠送token、产品id、支付渠道、客户端、领取人手机号、验证码、保障人姓名、保障人身份证
+    ...
+    ...    【说明】加入控制台的赠送计划
+    #设置Http域名和header
+    设置Http域名和不带登录态的头
+    #发送请求
+    发送POST请求    /ajax/utm/use-gift    product_id=${product_id}&pay-way=${pay_way}&client=${client}&redirect_url=${redirect_url}&name=${name}&card=${idcard}&phone=${phone}&code=${code}&gift_id=${gift_id}&gift_token=${gift_token}&ext%5Bgift_id%5D=${gift_id}
+    校验Http返回码和ResponseBody    200    ${key}    ${value}

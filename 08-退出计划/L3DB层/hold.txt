@@ -1,0 +1,18 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验退出计划后的持有信息
+    [Arguments]    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询hold表中某holdId对应的is_out字段的值
+    ...
+    ...    【参数】 holdId：hold表中该用户加入计划的唯一标识
+    ...
+    ...    【返回值】无
+    连接数据库
+    ${isOutTuple}    Query    SELECT is_out FROM hold WHERE hold_id="${holdId}";
+    ${isOut}    set variable    ${isOutTuple[0][0]}
+    Should Be Equal As Strings    1    ${isOut}    #1表示已退出

@@ -1,0 +1,17 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+根据hold_id查询gift
+    [Arguments]    ${hold_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据用户hold_id查看gift_id
+    ...
+    ...    【参数】hold_id
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM hold_gift WHERE hold_id = "${hold_id}"
+    #查询最新一条
+    ${HoldGiftTuple}    Query    SELECT gift_id FROM hold_gift WHERE hold_id = "${hold_id}"
+    [Return]    ${HoldGiftTuple[0][0]}

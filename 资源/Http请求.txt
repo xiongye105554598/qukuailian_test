@@ -1,0 +1,173 @@
+*** Settings ***
+Library           HttpLibrary.HTTP
+Library           String
+Library           BuiltIn
+Resource          config.txt
+Resource          全局变量.txt
+Resource          字符串处理.txt
+Library           Collections
+Resource          ../通用/L2接口层/登录.txt
+
+*** Keywords ***
+设置Http域名
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】 apiurl=www.txs.com（全局变量）
+    Create Http Context    ${apiurl}    http
+
+设置Http不带登录态的头
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】 UTM-QUICK-JOIN是Server的验证，key=UTM-QUICK-JOIN，value=任意值
+    ...    _AJAX_SIGN_KEY_是Server的验证
+    Set Request Header    UTM-QUICK-JOIN    111
+    Set Request Header    User-Agent    Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1
+
+设置Http带登录态的头
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 App中需登录的接口，均需设置这些头字段
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 无
+    #获取Http header各字段
+    log    ${ResponseCookie}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${Identity}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取_identity的值
+    ${userId}    获取列表中第一个Cookie值    ${ResponseCookie[2]}    #获取userId的值
+    #设置Http header各字段
+    Set Request Header    Cookie    guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity}    #guest_id和_AJAX_SIGN_KEY_    #为全局变量
+    Set Request Header    Ajax-Sign    ${AjaxSign}
+    Set Request Header    User-Agent    Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1    #表示移动端
+
+设置Http域名和不带登录态的头
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】设置域名和头
+    设置Http域名
+    设置Http不带登录态的头
+
+设置Http域名和带登录态的头
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 设置Http域名和带登录态的头
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 无
+    设置Http域名
+    设置Http带登录态的头
+
+发送POST请求
+    [Arguments]    ${Url}    ${HttpBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 Url，HttpBody（String类型），如果没有参数，HttpBody字段用\ 【说明】 HttpBody直接以字符串格式发送Post请求
+    log    ${HttpBody}
+    ${BodyLength}    Get length    ${HttpBody}
+    log    ${BodyLength}
+    Run keyword if    ${BodyLength}>0    Set Request Body    ${HttpBody}
+    HTTPLibrary.HTTP.POST    ${Url}
+    Log Response Body
+
+发送GET请求
+    [Arguments]    ${body}
+    [Documentation]    【作者】wsong
+    HttpLibrary.HTTP.GET    ${body}
+
+校验Http返回码
+    [Arguments]    ${HttpReturnCode}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 Http返回码
+    Response Status Code Should Equal    ${HttpReturnCode}
+
+校验Http ResponseBody
+    [Arguments]    ${ResponseKey}    ${ResponseValue}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 ResponseKey，ResponseValue
+    ...
+    ...    【说明】适合Response Body为json格式，校验ResponseBody中的键值对，K-V自定义，在接口层指定（不同接口校验的可能不同）
+    ${ResponseBody}    Get Response Body
+    Should Be Valid Json    ${ResponseBody}
+    ${Value}    Get Json Value    ${ResponseBody}    /${ResponseKey}
+    Should Be Equal    ${Value}    ${ResponseValue}
+
+校验Http返回码和ResponseBody
+    [Arguments]    ${HttpReturnCode}    ${ResponseKey}    ${ResponseValue}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 Http返回码，校验Key，校验Value
+    校验Http返回码    ${HttpReturnCode}
+    校验Http ResponseBody    ${ResponseKey}    ${ResponseValue}
+
+校验ResponseBody是否包含
+    [Arguments]    ${keyword}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 Key
+    ...
+    ...    【说明】适用于返回的Response Body为整个页面，校验该页面是否包含key
+    ${ResponseBody}    Get Response Body
+    Should Contain    ${ResponseBody}    ${keyword}
+
+设置CSRF登录态的头
+    [Arguments]    ${csrf}
+    [Documentation]    【作者】wsong
+    #获取Http header各字段
+    log    ${ResponseCookie}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${Identity}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取_identity的值
+    ${userId}    获取列表中第一个Cookie值    ${ResponseCookie[2]}    #获取userId的值
+    #设置Http header各字段
+    Set Request Header    Cookie    guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}
+    log    guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}
+
+设置控制台域名和带登录态的头
+    #获取控制台csrf
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置Http域名和header
+    设置Http域名
+    设置CSRF登录态的头    ${csrfCookie}
+    [Return]    ${csrfBody}
+
+设置控制台提现登录态的头
+    [Arguments]    ${csrf}    ${csrfToken}
+    [Documentation]    【作者】wsong
+    #获取Http header各字段
+    log    ${ResponseCookie}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${Identity}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取_identity的值
+    ${userId}    获取列表中第一个Cookie值    ${ResponseCookie[2]}    #获取userId的值
+    #设置Http header各字段
+    ${dict}    create dictionary    Cookie=guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}    Content-Type=multipart/form-data; boundary=----WebKitFormBoundary2MwaPzyZQBbrS6KB    X-CSRF-Token=${csrfToken}    X-PJAX-CONTAINER=\#w0    X-PJAX=true
+    ...    X-Requested-With=XMLHttpRequest
+    [Return]    ${dict}
+
+设置控制台申请互助登录态的头
+    [Arguments]    ${csrf}    ${csrfToken}
+    #获取Http header各字段
+    log    ${ResponseCookie}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${Identity}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取_identity的值
+    ${userId}    获取列表中第一个Cookie值    ${ResponseCookie[2]}    #获取userId的值
+    #设置Http header各字段
+    ${dict}    create dictionary    Cookie=guest_id=${GuestId};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}    X-CSRF-Token=${csrfToken}
+    [Return]    ${dict}
+
+设置赠送控制台登录态的头
+    [Arguments]    ${csrf}    ${csrfToken}
+    [Documentation]    【作者】wsong
+    #获取Http header各字段
+    log    ${ResponseCookie}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${ResponseCookie[0]}    #获取PHPSESSID的值
+    ${Identity}    获取列表中第一个Cookie值    ${ResponseCookie[1]}    #获取_identity的值
+    ${userId}    获取列表中第一个Cookie值    ${ResponseCookie[2]}    #获取userId的值
+    #设置Http header各字段
+    Comment    ${dict}    create dictionary    Cookie=guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}    Content-Type=multipart/form-data; boundary=----WebKitFormBoundary2MwaPzyZQBbrS6KB    X-CSRF-Token=${csrfToken}    X-PJAX-CONTAINER=\#w0
+    ...    X-PJAX=true    X-Requested-With=XMLHttpRequest
+    ${dict}    create dictionary    Cookie=guest_id=${GuestId};_AJAX_SIGN_KEY_=${AjaxSign};userId=${userId};PHPSESSID=${PHPSESSID};_identity=${Identity};_csrf=${csrf}    X-Requested-With=XMLHttpRequest    X-CSRF-Token=${csrfToken}    X-PJAX-CONTAINER=\#w0    X-PJAX=true
+    [Return]    ${dict}

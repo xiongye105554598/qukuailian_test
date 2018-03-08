@@ -1,0 +1,42 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查看我的消息通知
+    [Arguments]    ${offset}    ${limit}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据offset和limit查询用户的消息通知
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/message?offset=${offset}&limit=${limit}&product_id=    \
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    [Return]    ${ResponseBody}
+
+校验我的消息通知不为空
+    [Arguments]    ${ResponseBody}    ${num}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】校验返回的json个数和设定的个数相符
+    ${Value}    Get Json Value    ${ResponseBody}    /data
+    #解析parse
+    ${result}    Parse Json    ${Value}
+    ${len}    Get Length    ${result}
+    #个数大于0小于等于num
+    Should Be True    ${len}>0
+    Should Be True    ${len}<=${num}
+
+校验我的消息通知为空
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】校验返回的json个数=0
+    ${Value}    Get Json Value    ${ResponseBody}    /data
+    #解析parse
+    ${result}    Parse Json    ${Value}
+    ${len}    Get Length    ${result}
+    #个数等于0
+    Should Be Equal As Numbers    ${len}    0

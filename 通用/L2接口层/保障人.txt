@@ -1,0 +1,131 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+添加保障人请求
+    [Arguments]    ${realname}    ${cardId}    ${company}    ${major}    ${minor}    ${job}
+    ...    ${email}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用添加保障人接口
+    ...
+    ...    【参数】 realname：保障人姓名；cardId：保障人身份证号；company：保障人公司；major：保障人行业；minor：保障人职业；job：保障人职位；email：保障人邮箱
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/addinsured    InsuredForm[real_name]=${realname}&InsuredForm[card_no]=${cardId}&InsuredForm[company]=${company}&InsuredForm[major]=${major}&InsuredForm[minor]=${minor}&InsuredForm[job]=${job}&InsuredForm[email]=${email}
+
+我的保障人添加保障人成功
+    [Arguments]    ${realname}    ${cardId}    ${company}    ${major}    ${minor}    ${job}
+    ...    ${email}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 添加保障人成功，返回保障人ID
+    ...
+    ...    【参数】 realname：保障人姓名；cardId：保障人身份证号；company：保障人公司；major：保障人行业；minor：保障人职业；job：保障人职位；email：保障人邮箱
+    ...
+    ...    【返回值】 insured_id：保障人ID
+    添加保障人请求    ${realname}    ${cardId}    ${company}    ${major}    ${minor}    ${job}
+    ...    ${email}
+    校验Http返回码和ResponseBody    200    success    true
+    #获取保障人的InsuredId
+    ${ResponseBody}    Get Response Body
+    Should Be Valid Json    ${ResponseBody}
+    ${DataValue}    Get Json Value    ${ResponseBody}    /data
+    Should Be Valid Json    ${DataValue}
+    ${insured_id}    Get Json Value    ${DataValue}    /insured_id
+    log    ${insured_id}
+    [Return]    ${insured_id}
+
+我的保障人添加保障人失败
+    [Arguments]    ${realname}    ${cardId}    ${company}    ${major}    ${minor}    ${job}
+    ...    ${email}    ${errorMsg}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 保障人已存在，继续添加保障人，校验返回的错误信息
+    ...
+    ...    【参数】 realname：保障人姓名；cardId：保障人身份证号；company：保障人公司；major：保障人行业；minor：保障人职业；job：保障人职位；email：保障人邮箱
+    ...
+    ...    【返回值】 无
+    添加保障人请求    ${realname}    ${cardId}    ${company}    ${major}    ${minor}    ${job}
+    ...    ${email}
+    校验Http返回码和ResponseBody    200    success    false
+    #校验返回的错误信息
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    ${message}    Get Json Value    ${ResponseBody}    /message
+    Should be Equal As Strings    ${errorMsg}    ${message}
+
+添加保障人时无职业
+    [Arguments]    ${realname}    ${cardId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 无保障人职业信息，添加保障人成功，返回保障人ID
+    ...
+    ...    【参数】 realname：保障人姓名；cardId：保障人身份证号
+    ...
+    ...    【返回值】 insured_id：保障人ID
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/addinsured    InsuredForm[real_name]=${realname}&InsuredForm[card_no]=${cardId}
+    #获取保障人的InsuredId
+    ${ResponseBody}    Get Response Body
+    Should Be Valid Json    ${ResponseBody}
+    ${DataValue}    Get Json Value    ${ResponseBody}    /data
+    Should Be Valid Json    ${DataValue}
+    ${insured_id}    Get Json Value    ${DataValue}    /insured_id
+    log    ${insured_id}
+    [Return]    ${insured_id}
+
+计划详情添加保障人
+    [Arguments]    ${productId}    ${realname}    ${cardId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 计划详情页添加保障人，接口参数与我的保障人中添加保障人的接口不一样
+    ...
+    ...    【参数】 productId：产品id，realname：保障人姓名，cardId：保障人身份证号
+    ...
+    ...    【返回值】无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/addinsured?force=1&plan_id=${productId}    InsuredForm[real_name]=${realname}&InsuredForm[card_no]=${cardId}
+
+计划详情添加保障人成功
+    [Arguments]    ${productId}    ${realname}    ${cardId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 计划详情页添加保障人成功
+    ...
+    ...    【参数】 productId：产品id，realname：保障人姓名，cardId：保障人身份证号
+    ...
+    ...    【返回值】insured_id：保障人ID
+    计划详情添加保障人    ${productId}    ${realname}    ${cardId}
+    校验Http返回码和ResponseBody    200    success    true
+    #获取保障人的InsuredId
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    Should Be Valid Json    ${ResponseBody}
+    ${DataValue}    Get Json Value    ${ResponseBody}    /data
+    Should Be Valid Json    ${DataValue}
+    ${insured_id}    Get Json Value    ${DataValue}    /insured_id
+    log    ${insured_id}
+    [Return]    ${insured_id}
+
+根据身份证号获取性别
+    [Arguments]    ${card_no}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据身份证号获取性别，身份证号倒数第2位为奇数，表明性别男，倒数第2位为偶数，表明性别女
+    ...
+    ...    【参数】 card_no：身份证号
+    ...
+    ...    【返回值】 gender：性别，1表示男，2表示女
+    ${num}    Get SubString    ${card_no}    16    17
+    ${numType}    Evaluate    ${num}%2
+    ${gender}    Run keyword IF    ${numType}==0    set variable    2    ELSE IF    ${numType}==1
+    ...    set variable    1
+    [Return]    ${gender}

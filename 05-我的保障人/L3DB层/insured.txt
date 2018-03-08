@@ -1,0 +1,101 @@
+*** Settings ***
+Resource          ../../通用/L3DB层/account_phone.txt
+Resource          ../../通用/L2接口层/保障人.txt
+
+*** Keywords ***
+校验保障人信息
+    [Arguments]    ${用户手机号}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验insured表中保障人信息
+    ...
+    ...    【参数】 用户手机号；保障人Id；保障人姓名；保障人身份证号；保障人公司；保障人行业；保障人职业；保障人职位；保障人邮箱
+    ...
+    ...    【返回值】 无
+    ${UserId}    根据手机号查UserId    ${用户手机号}
+    连接数据库
+    ${InsuredInfoTuple}    Query    SELECT real_name,card_no,gender,company,major,minor,job,email FROM `insured` WHERE user_id=${UserId} AND insured_id=${保障人Id};
+    Should be Equal As Strings    ${保障人姓名}    ${InsuredInfoTuple[0][0]}    #校验保障人姓名
+    Should be Equal As Strings    ${保障人身份证号}    ${InsuredInfoTuple[0][1]}    #校验保障人身份证号
+    ${gender}    根据身份证号获取性别    ${InsuredInfoTuple[0][1]}
+    Should be Equal As Strings    ${gender}    ${InsuredInfoTuple[0][2]}    #校验保障人性别，默认：男
+    Should be Equal As Strings    ${保障人公司}    ${InsuredInfoTuple[0][3]}    #校验保障人公司
+    Should be Equal As Strings    ${保障人行业}    ${InsuredInfoTuple[0][4]}    #校验保障人行业
+    Should be Equal As Strings    ${保障人职业}    ${InsuredInfoTuple[0][5]}    #校验保障人职业
+    Should be Equal As Strings    ${保障人职位}    ${InsuredInfoTuple[0][6]}    #校验保障人职位
+    Should be Equal As Strings    ${保障人邮箱}    ${InsuredInfoTuple[0][7]}    #校验保障人邮箱
+
+根据保障人id校验保障人身份信息
+    [Arguments]    ${用户手机号}    ${保障人Id}    ${保障人身份证号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验insured_idcards表中身份证信息和性别
+    ...
+    ...    【参数】 用户手机号；保障人Id；保障人身份证号
+    ...
+    ...    【返回值】 无
+    ${UserId}    根据手机号查UserId    ${用户手机号}
+    连接数据库
+    ${InsuredInfoTuple}    Query    SELECT card_no,gender FROM `insured_idcards` WHERE card_id=${保障人Id};
+    Should be Equal As Strings    ${保障人身份证号}    ${InsuredInfoTuple[0][0]}    #校验保障人身份证号
+    ${gender}    根据身份证号获取性别    ${InsuredInfoTuple[0][0]}
+    Should be Equal As Strings    ${gender}    ${InsuredInfoTuple[0][1]}    #校验保障人性别
+
+校验添加保障人后的DB信息
+    [Arguments]    ${用户手机号}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验保障人相关表的各字段是否正确
+    ...
+    ...    【参数】 用户手机号；保障人Id；保障人姓名；保障人身份证号；保障人公司；保障人行业；保障人职业；保障人职位；保障人邮箱
+    ...
+    ...    【返回值】 无
+    校验保障人信息    ${用户手机号}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    校验未被删除的保障人信息    ${用户手机号}    ${保障人Id}
+    根据保障人Id校验保障人身份信息    ${用户手机号}    ${保障人Id}    ${保障人身份证号}
+
+校验删除保障人后的DB信息
+    [Arguments]    ${用户手机号}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验保障人相关表的各字段是否正确
+    ...
+    ...    【参数】 用户手机号；保障人Id；保障人姓名；保障人身份证号；保障人公司；保障人行业；保障人职业；保障人职位；保障人邮箱
+    ...
+    ...    【返回值】 无
+    校验保障人信息    ${用户手机号}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    校验已被删除的保障人信息    ${用户手机号}    ${保障人Id}
+    根据保障人Id校验保障人身份信息    ${用户手机号}    ${保障人Id}    ${保障人身份证号}
+
+校验未被删除的保障人信息
+    [Arguments]    ${用户手机号}    ${保障人Id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验insured表中del字段是否为0
+    ...
+    ...    【参数】 用户手机号； 保障人ID
+    ...
+    ...    【返回值】 无
+    ${UserId}    根据手机号查UserId    ${用户手机号}
+    连接数据库
+    ${InsuredInfoTuple}    Query    SELECT del FROM `insured` WHERE user_id=${UserId} AND insured_id=${保障人Id};
+    Should be Equal As Strings    0    ${InsuredInfoTuple[0][0]}    #0表示未被删除
+
+校验已被删除的保障人信息
+    [Arguments]    ${用户手机号}    ${保障人Id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验insured表中del字段是否为1
+    ...
+    ...    【参数】 用户手机号； 保障人ID
+    ...
+    ...    【返回值】 无
+    ${UserId}    根据手机号查UserId    ${用户手机号}
+    连接数据库
+    ${InsuredInfoTuple}    Query    SELECT del FROM `insured` WHERE user_id=${UserId} AND insured_id=${保障人Id};
+    Should be Equal As Strings    1    ${InsuredInfoTuple[0][0]}    #1表示已被删除

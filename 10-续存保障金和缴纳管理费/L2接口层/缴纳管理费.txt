@@ -1,0 +1,65 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../../通用/L2接口层/支付.txt
+
+*** Keywords ***
+通用缴纳
+    [Arguments]    ${product_id}    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用缴纳管理费接口
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    ${redirect_url}    set variable    /payment/payresult?product_id=${product_id}&order_type=4
+    发送POST请求    /ajax/order/pay    product_id=${product_id}&pay-way=wx_wap&client=mobile&ext[hold_id]=${holdId}&order_type=4&redirect_url=\&{redirect_url}
+
+余额缴纳管理费
+    [Arguments]    ${product_id}    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 余额缴纳管理费
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用缴纳    ${product_id}    ${holdId}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+
+微信缴纳管理费
+    [Arguments]    ${product_id}    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 微信缴纳管理费成功
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用缴纳    ${product_id}    ${holdId}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    #调用Ping++模拟支付请求
+    微信Ping++支付    ${ResponseBody}
+
+微信缴纳管理费失败
+    [Arguments]    ${product_id}    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 微信缴纳管理费失败，抛出了异常，导致没法校验ResponseBody信息
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用缴纳    ${product_id}    ${holdId}
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}

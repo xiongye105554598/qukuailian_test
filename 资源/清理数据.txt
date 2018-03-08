@@ -1,0 +1,187 @@
+*** Settings ***
+Resource          设置数据库.txt
+Resource          ../通用/L3DB层/account_phone.txt
+Resource          redis.txt
+
+*** Keywords ***
+清理已加入的用户
+    [Arguments]    ${phone}    ${cardNo}    ${balance}
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    ${InsuredIdTuple}    Query    SELECT insured_id FROM `insured` WHERE user_id=${UserId} AND card_no="${cardNo}";
+    #删除持有信息
+    Execute Sql String    DELETE from hold where user_id=${UserId};
+    #恢复余额
+    Execute Sql String    update account_phone set balance=${balance} WHERE phone=${phone};
+    #删除交易记录
+    Execute Sql String    delete from `order` where uid=${UserId};
+    #删除保障人
+    Execute Sql String    DELETE FROM `insured` \ WHERE user_id=${UserId};
+    Execute Sql String    DELETE FROM `insured_idcards` WHERE card_no="${cardNo}";
+
+清理实名认证信息
+    [Arguments]    ${phone}    ${idcard}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id和idcard删除account_authentication表和insured表
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #清理account_authentication表
+    Execute Sql String    DELETE FROM account_authentication WHERE user_id=${user_id}
+    log    ${idcard}
+    log    ${user_id}
+    #清理insured 表
+    Execute Sql String    DELETE FROM insured WHERE user_id=${user_id} AND card_no=${idcard}
+
+清理注册信息
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据phone删除account_phone表中记录
+    连接数据库
+    #清理account_phone表
+    Execute Sql String    DELETE FROM account_phone WHERE phone=${phone}
+
+清理添加的计划和用户
+    [Arguments]    ${plan_id}    ${phone}    ${balance}
+    log    ${phone}
+    连接数据库
+    #删除创建的计划
+    Execute Sql String    DELETE FROM plan WHERE id="${plan_id}";
+    ${UserId}    根据手机号查UserId    ${phone}
+    #删除持有信息
+    Execute Sql String    DELETE FROM hold WHERE product_id="${plan_id}";
+    #删除交易记录
+    Execute Sql String    delete from `order` where uid=${UserId};
+    #删除保障人
+    Execute Sql String    DELETE FROM `insured` \ WHERE user_id="${UserId}";
+    清除加入计划人数    ${plan_id}
+    #更新用户余额
+    Execute Sql String    UPDATE account_phone SET balance="${balance}" WHERE id="${UserId}";
+
+清理保障人信息
+    [Arguments]    ${phone}    @{cardNoList}
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    Execute Sql String    DELETE FROM `insured` WHERE user_id=${UserId} ;
+    : FOR    ${cardNo}    IN    @{cardNoList}
+    \    Execute Sql String    delete from `insured_idcards` where card_no="${cardNo}";
+
+清理多个保障人信息
+    [Arguments]    ${cardNo}    @{phoneList}
+    连接数据库
+    : FOR    ${phone}    IN    @{phoneList}
+    \    ${UserId}    根据手机号查UserId    ${phone}
+    \    Execute Sql String    DELETE FROM `insured` WHERE user_id=${UserId} ;
+    \    Execute Sql String    DELETE from hold where user_id=${UserId};
+    Execute Sql String    delete from `insured_idcards` where card_no="${cardNo}";
+
+设置账户初始余额
+    [Arguments]    ${phone}    ${balance}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号、余额
+    ...
+    ...    【说明】设置用户的余额为balance
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    #更新用户余额
+    Execute Sql String    UPDATE account_phone SET balance="${balance}" WHERE id=${UserId};
+
+恢复退出计划前数据
+    [Arguments]    ${phone}    ${balance}
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    Execute Sql String    update hold set is_out=0, prestore_balance=900, reward=800 where user_id=${UserId};
+    Execute Sql String    UPDATE account_phone SET balance="${balance}" WHERE id=${UserId};
+    ${holdIdTuple}    query    SELECT hold_id FROM hold WHERE user_id="${UserId}";
+    ${hold_id}    set variable    ${holdIdTuple[0][0]}
+    Execute Sql String    delete from `hold_out` where hold_id="${hold_id}";
+
+清理赠送加入数据
+    [Arguments]    ${phone}    ${product_id}    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户id、赠送id
+    ...
+    ...    【说明】
+    ...    1. 删除用户的hold
+    ...    2. 删除用户的insured
+    连接数据库
+    ${user_id}    根据手机号查UserId    ${phone}
+    #删除hold表
+    Execute Sql String    DELETE FROM hold WHERE product_id="${product_id}" AND user_id=${user_id} AND gift_id=${gift_id}
+    #删除insuerd表
+    Execute Sql String    DELETE FROM insured WHERE user_id=${user_id}
+
+清理邀请关系
+    [Arguments]    ${邀请者手机号}    ${balance}    @{被邀请者手机号列表}
+    连接数据库
+    ${inviterId}    根据手机号查UserId    ${邀请者手机号}
+    : FOR    ${被邀请者手机号}    IN    @{被邀请者手机号列表}
+    \    ${userId}    根据手机号查UserId    ${被邀请者手机号}
+    \    #清理被邀请者加入计划信息
+    \    #删除持有信息
+    \    Execute Sql String    DELETE FROM hold WHERE user_id="${userId}";
+    \    #删除交易记录
+    \    Execute Sql String    delete from `order` where uid=${userId};
+    \    #删除保障人
+    \    Execute Sql String    DELETE FROM `insured` \ WHERE user_id=${userId};
+    \    #删除账户信息
+    \    Execute Sql String    DELETE FROM account_phone WHERE id=${userId};
+    \    #清理邀请关系
+    \    Execute Sql String    DELETE FROM `campaign_inviter` WHERE inviter_id="${inviterId}" AND user_id="${userId}";
+    #设置账户余额
+    Execute Sql String    update account_phone set balance=${balance} WHERE phone=${邀请者手机号};
+
+清理实名信息和加入计划的用户
+    [Arguments]    ${phone}    ${cardNo}    ${balance}
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #清理account_authentication表
+    Execute Sql String    DELETE FROM account_authentication WHERE user_id=${user_id}
+    清理已加入的用户    ${phone}    ${cardNo}    ${balance}
+
+清理加入和退出计划的记录
+    [Arguments]    ${phone}    ${cardNo}    ${balance}
+    清理已加入的用户    ${phone}    ${cardNo}    ${balance}
+    #清理hold_out表中的信息
+    Execute Sql String    DELETE FROM hold_out WHERE reason="自动化测试";
+
+清理用户消息为0
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号
+    ...
+    ...    【说明】删除用户的所有消息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    #删除用户消息
+    Execute Sql String    DELETE FROM account_message WHERE user_id=${user_id}
+
+清理交易记录为0
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号
+    ...
+    ...    【说明】删除用户的所有消息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    #删除用户消息
+    Execute Sql String    DELETE FROM `order` WHERE uid=${user_id}
+
+清理保障人为0
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号
+    ...
+    ...    【说明】删除用户的所有消息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    #删除用户消息
+    Execute Sql String    DELETE FROM insured WHERE user_id=${user_id}

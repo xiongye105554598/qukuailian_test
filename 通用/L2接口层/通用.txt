@@ -1,0 +1,90 @@
+*** Settings ***
+Library           String
+Resource          ../L3DB层/insured_idcards.txt
+Library           TongxinclubLibrary
+
+*** Keywords ***
+去除多余的引号
+    [Arguments]    ${source}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 将变量中左右两边多余的引号去掉
+    ...
+    ...    【参数】 source：原始变量
+    ...
+    ...    【返回值】dest：去除引号之后的变量
+    ${dest}    Replace String    ${source}    \"    ${EMPTY}
+    [Return]    ${dest}
+
+获取新的身份证号
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 获取从未用过的身份证号，如果生成的身份证号已存在，会嵌套执行此关键字，直到身份证号不存在为止
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 cardNo：身份证号
+    ${cardNo}    get IdCard
+    log    ${cardNo}
+    ${length}    校验身份证号是否存在    ${cardNo}
+    Run keyword IF    ${length}>0    获取新的身份证号
+    [Return]    ${cardNo}
+
+根据手机号生成验证码
+    [Arguments]    ${用户手机号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 获取手机号的验证码
+    ...
+    ...    【参数】 用户手机号
+    ...
+    ...    【返回值】 code：手机验证码
+    ${手机号前3位}    Get SubString    ${用户手机号}    0    3
+    log    ${手机号前3位}
+    ${code}    Run keyword If    "${手机号前3位}"=="238"    获取238手机号的验证码    ${用户手机号}    ELSE    获取非238手机号的验证码
+    ...    ${用户手机号}
+    [Return]    ${code}
+
+获取238手机号的验证码
+    [Arguments]    ${用户手机号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 获取手机号的第11、6、9、5位
+    ...
+    ...    【参数】 用户手机号
+    ...
+    ...    【返回值】 code：手机验证码
+    #获取第11位
+    ${num11}    Get SubString    ${用户手机号}    10    11
+    #获取第6位
+    ${num6}    Get SubString    ${用户手机号}    5    6
+    #获取第9位
+    ${num9}    Get SubString    ${用户手机号}    8    9
+    #获取第5位
+    ${num5}    Get SubString    ${用户手机号}    4    5
+    ${code}    set variable    ${num11}${num6}${num9}${num5}
+    [Return]    ${code}
+
+获取非238手机号的验证码
+    [Arguments]    ${用户手机号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 获取手机号的前4位
+    ...
+    ...    【参数】 用户手机号
+    ...
+    ...    【返回值】 code：手机验证码
+    #获取前4位
+    ${code}    Get SubString    ${用户手机号}    0    4
+    [Return]    ${code}
+
+获取用户姓名
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 随机获取用户姓名
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 姓名
+    ${姓名}    get random name
+    [Return]    ${姓名}

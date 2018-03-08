@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查询某用户加入某计划的holdIdList
+    [Arguments]    ${phone}    ${planId}    ${num}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询某用户其加入某计划的保障人的holdId
+    ...
+    ...    【参数】 phone：用户手机号；planId：计划ID；num：保障人数量
+    ...
+    ...    【返回值】HoldIdList：保障人的holdId列表
+    连接数据库
+    ${userId}    根据手机号查UserId    ${phone}
+    ${HoldIdTuple}    Query    SELECT hold_id FROM hold WHERE product_id="${planId}" AND is_out="0" AND user_id="${userId}";
+    @{HoldIdList}    create list
+    : FOR    ${i}    IN RANGE    ${num}
+    \    log    ${i}
+    \    @{HoldIdList}    create list    @{HoldIdList}    ${HoldIdTuple[${i}][0]}
+    log many    @{HoldIdList}
+    [Return]    @{HoldIdList}

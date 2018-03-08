@@ -1,0 +1,88 @@
+*** Settings ***
+Resource          登录.txt
+Resource          ../../02-加入计划/L2接口层/支付.txt
+Resource          ../../02-加入计划/L2接口层/保障人.txt
+Resource          ../../02-加入计划/L3DB层/hold.txt
+Resource          ../../08-退出计划/L3DB层/hold.txt
+Resource          ../../08-退出计划/L2接口层/控制台.txt
+Resource          ../L3DB层/hold.txt
+
+*** Keywords ***
+添加计划
+    [Arguments]    ${csrfCookie}    ${body}    ${plan_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】添加一个新的计划，添加时，捕捉的是控制台的Api，因此需要控制台账户。注意：添加的计划，成长期人数：6个，运行期人数：10个
+    ...
+    ...    【参数】plan_id：计划id
+    ...
+    ...    【返回值】 无
+    #控制台账户登录获取Cookie
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置Http域名和header
+    设置Http域名
+    设置CSRF登录态的头    ${csrfCookie}
+    #发送请求和校验返回
+    发送POST请求    /admin/plan/create    ${body}    #成长期：6人，运行期：10人    #休眠期：4人
+    校验添加的计划是否存在    ${plan_id}
+
+添加重疾无忧互助计划
+    [Arguments]    ${plan_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】添加一个新的重疾无忧互助计划
+    ...
+    ...    【参数】plan_id：计划id，为方便查看和处理，计划id格式类似于zjwy_product-1012
+    ...
+    ...    【返回值】 无
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    #添加重疾无忧
+    添加计划    ${csrfCookie}    _csrf=${csrfBody}&ProductBase[id]=${plan_id}&ProductBase[insurance_list]=&ProductBase[insurance_list][]=zdjb&ProductBase[cover]=http://static.txs.com/www/images/product/20f2988ab30a4ca94f08baf684eaf150_zqwy_cover.png&ProductBase[pc_cover]=http://static.txs.com/www/assets/newpc/images/39fd13078838b451d11984967aebb0ca_product_cover2.png&ProductBase[cover_detail]=http://static.txs.com/www/images/product/05de25b5d24c8c45e9c85ed08ee0ce72_zjwy_cover_detail.jpg&ProductBase[icon]=http://static.txs.com/www/images/product/085acc176ad2e33bf67370f2cedacbe1_zjwy_icon.png&ProductBase[name]=全民重疾无忧互助计划【自动化专用】&ProductBase[subtitle]=预存<span>9</span>元，最高可获<span>30万元</span>互助金&ProductBase[brief]=会员患有癌症、急性心肌梗塞、脑中风等30种重大疾病，最高可获得30万元的互助金&ProductBase[slogan]=保障30种重大疾病&ProductBase[min_join_age]=18&ProductBase[max_join_age]=50&ProductBase[min_age]=18&ProductBase[max_age]=60&ProductBase[bzrq]=部分高危职业除外&ProductBase[bzfw]=癌症、急性心肌梗塞、脑中风等30种重大疾病&ProductBase[compensation]=30000000&ProductBase[start_up_member_count]=6&ProductBase[best_member_count]=10&ProductBase[least_member_count]=4&ProductBase[prestore_amount_list]=900&ProductBase[renew_amount_list]=900,1900,4900,9900,19900&ProductBase[present_amount_list]=900,1900&ProductBase[allow_delegation]=0&ProductBase[allow_delegation]=1&ProductBase[allow_present]=0&ProductBase[allow_present]=1&ProductBase[mgmt_cost_discount]=0,0,1,0&ProductBase[prepare_duration]=15552000&ProductBase[dormant_duration]=2592000&ProductBase[protection_period]=31536000&ProductBase[publicity_duration]=864000&ProductBase[rank]=1&ProductBase[extra]=&ProductBase[hidden]=0&ProductBase[subsidy]=0    ${plan_id}    #成长期：6人，运行期：10人    #休眠期：4人
+
+单个保障人微信加入计划
+    [Arguments]    ${保障人姓名}    ${保障人身份证号}    ${计划类型}    ${用户手机号}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】某用户添加一个保障人，并将该保障人加入到某计划中
+    ...
+    ...    【参数】保障人姓名；保障人身份证号；计划类型；用户手机号
+    ...
+    ...    【返回值】 无
+    ${保障人Id}    计划详情添加保障人成功    ${计划类型}    ${保障人姓名}    ${保障人身份证号}
+    log    ${保障人Id}
+    #微信支付加入计划
+    微信支付    ${计划类型}    ${保障人Id}
+    加入成功校验持有计划信息    ${用户手机号}    ${保障人Id}    ${计划类型}
+    校验微信加入计划的交易记录    ${用户手机号}    ${计划类型}
+
+多个保障人余额加入计划
+    [Arguments]    ${计划类型}    ${用户手机号}    ${保障人信息}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】将多个用户加入加入计划，外部只需要传入保障人姓名，身份证号会默认区本关键字的列表，最大支持加入9个保障人
+    ...
+    ...    【参数】计划类型：计划id；用户手机号；保障人姓名列表；计划状态：1筹备期，2成长期，3运行期
+    ...
+    ...    【返回值】 无
+    @{保障人姓名列表}    Get dictionary keys    ${保障人信息}
+    : FOR    ${保障人姓名}    IN    @{保障人姓名列表}
+    \    ${保障人身份证号}    GET From dictionary    ${保障人信息}    ${保障人姓名}
+    \    ${保障人Id}    计划详情添加保障人成功    ${计划类型}    ${保障人姓名}    ${保障人身份证号}
+    \    sleep    0.5s
+    \    余额支付    ${计划类型}    ${保障人Id}
+    \    加入成功校验持有计划信息    ${用户手机号}    ${保障人Id}    ${计划类型}
+    \    校验余额加入计划的交易记录    ${用户手机号}    ${计划类型}
+    sleep    0.5s
+
+多个保障人退出计划
+    [Arguments]    ${用户手机号}    ${计划类型}    ${num}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 将某用户中的多个保障人退出计划
+    ...
+    ...    【参数】 用户手机号；计划类型：计划ID；num：退出计划的保障人个数
+    ...
+    ...    【返回值】无
+    @{holdIdList}    查询某用户加入某计划的holdIdList    ${用户手机号}    ${计划类型}    ${num}
+    : FOR    ${hold_id}    IN    @{holdIdList}
+    \    控制台退出计划    ${hold_id}    自动化测试

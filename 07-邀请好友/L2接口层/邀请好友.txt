@@ -1,0 +1,92 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+
+*** Keywords ***
+进入邀请好友页
+    [Arguments]    ${UserPhone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 进入邀请好友页，返回邀请好友页中各cookie值
+    ...
+    ...    【参数】 UserPhone：邀请者的手机号
+    ...
+    ...    【返回值】 guest_id：Cookie字段；PHPSESSID：Cookie字段；raw_utm_source：Cookie字段；utm_source：Cookie字段
+    ${UserId}    根据手机号查UserId    ${UserPhone}
+    #设置Http域名和header
+    设置Http域名
+    #发送请求和校验返回
+    发送GET请求    /product/share?inviter_id=${UserId}&campaign_id=lxhd&utm_source=share_campaign_inviter
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    ${Cookie}    Get Response Header    Set-Cookie
+    log    ${Cookie}
+    ${guest_id}    获取列表中第一个Cookie值    ${Cookie[0]}
+    ${raw_utm_source}    获取列表中第一个Cookie值    ${Cookie[1]}
+    ${PHPSESSID}    获取列表中第一个Cookie值    ${Cookie[2]}
+    ${utm_source}    获取列表中第一个Cookie值    ${Cookie[3]}
+    [Return]    ${guest_id}    ${PHPSESSID}    ${raw_utm_source}    ${utm_source}
+
+被邀请者登录
+    [Arguments]    ${phone}    ${verifyCode}    ${guest_id}    ${PHPSESSID}    ${raw_utm_source}    ${utm_source}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 被邀请者通过邀请者分享的链接登录
+    ...
+    ...    【参数】 phone：被邀请者手机号；verifyCode：被邀请者验证码；guest_id：邀请链接中Cookie字段；PHPSESSID：邀请链接中Cookie字段；raw_utm_source：邀请链接中Cookie字段；utm_source：邀请链接中Cookie字段
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名
+    ${ajaxSign}    set variable    1477274454217asignkeyck
+    ${Cookie}    set variable    PHPSESSID=${PHPSESSID};guest_id=${guest_id};raw_utm_source=${raw_utm_source};utm_source=${utm_source};_AJAX_SIGN_KEY_=${ajaxSign}
+    log    ${Cookie}
+    Set Request Header    Ajax-Sign    ${ajaxSign}
+    Set Request Header    Cookie    ${Cookie}
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/login    LoginForm[type]=2&LoginForm[username]=${phone}&LoginForm[password]=123123&LoginForm[verifycode]=${verifyCode}
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+
+进入邀请详情页
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询邀请详情页面，返回页面内容
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 ResponseBody：邀请详情页面的内容
+    #设置Http域名和header
+    设置Http域名
+    设置Http带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /invitation/detail
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    [Return]    ${ResponseBody}
+
+校验邀请详情页内容
+    [Arguments]    ${ReponseBody}    ${phone}    ${stateDes}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验邀请详情页面内容
+    ...
+    ...    【参数】 ReponseBody：邀请详情页面返回的内容；phone：邀请者手机号；stateDes：要校验的状态描述信息（待加入/已成功）
+    ...
+    ...    【返回值】 无
+    Should Contain    ${ReponseBody}    ${phone}
+    Should Contain    ${ReponseBody}    ${stateDes}
+
+查看并校验邀请详情页内容
+    [Arguments]    ${phone}    ${stateDes}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询邀请详情页面，并校验页面内容
+    ...
+    ...    【参数】 phone：邀请者手机号；stateDes：要校验的状态描述信息（待加入/已成功）
+    ...
+    ...    【返回值】 无
+    ${ResponseBody}    进入邀请详情页
+    校验邀请详情页内容    ${ResponseBody}    ${phone}    ${stateDes}

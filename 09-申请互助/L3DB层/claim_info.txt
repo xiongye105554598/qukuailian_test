@@ -1,0 +1,19 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+根据holdId查询ClaimId
+    [Arguments]    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据hold_id查询claim_info中的claimId
+    ...
+    ...    【参数】 holdId：用户持有计划的唯一标识
+    ...
+    ...    【返回值】claimId：申请互助的唯一标识
+    连接数据库
+    log    ${holdId}
+    ${claimIdTuple}    query    SELECT id FROM claim_info \ WHERE hold_id = "${holdId}";
+    ${claimId}    set variable    ${claimIdTuple[0][0]}
+    log    ${claimId}
+    [Return]    ${claimId}

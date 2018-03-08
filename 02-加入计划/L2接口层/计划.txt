@@ -1,0 +1,71 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/登录.txt
+Resource          支付.txt
+Resource          保障人.txt
+Resource          ../L3DB层/hold.txt
+Resource          ../L3DB层/order.txt
+Resource          ../../通用/L3DB层/plan.txt
+Library           Collections
+Resource          ../../通用/L2接口层/计划.txt
+
+*** Keywords ***
+查询我的计划
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询我的计划返回的页面
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】ResponseBody：我的计划返回的页面字段
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /myplan/myplanlist
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    [Return]    ${ResponseBody}
+
+校验我的计划
+    [Arguments]    ${返回的计划信息}    ${计划}    ${保障人姓名}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验我的计划展示的各字段
+    ...
+    ...    【参数】 返回的计划信息、计划：计划类型（IT或重疾）、保障人姓名
+    ...
+    ...    【返回值】无
+    log    ${返回的计划信息}
+    Should Contain    ${返回的计划信息}    保障人：${保障人姓名}
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${返回的计划信息}    9.00    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${返回的计划信息}    299.00
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${返回的计划信息}    全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${返回的计划信息}    IT族安康互助计划
+
+添加IT安康互助计划
+    [Arguments]    ${plan_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】添加一个新的IT安康互助计划
+    ...
+    ...    【参数】plan_id：计划id，为方便查看和处理，计划id格式类似于zjwy_product-1012
+    ...
+    ...    【返回值】 无
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    #添加IT安康
+    添加计划    ${csrfCookie}    _csrf=${csrfBody}&ProductBase[id]=${plan_id}&&ProductBase[insurance_list]=&ProductBase[insurance_list][]=glcs&ProductBase[insurance_list][]=ywsh&ProductBase[insurance_list][]=zdjb&ProductBase[cover]=http://static.txs.com/www/images/product/8b4a77029451393b7f2caffcb1c777fa_itwy_cover.png&ProductBase[pc_cover]=http://static.txs.com/www/assets/newpc/images/18c4bb470bfaf8dda16811d30d0314e3_product_cover3.png&ProductBase[cover_detail]=http://static.txs.com/www/images/product/364b5910f0c6c863c77822e19c6fe63b_akwy_cover_detail.jpg&ProductBase[icon]=http://static.txs.com/www/images/product/8b53e2c6731d8eebb0b45cc46728fd05_akwy_icon.png&ProductBase[name]=IT族安康互助计划【自动化专用】&ProductBase[subtitle]=预存<span>299</span>元，最高可获<span>90万元</span>互助金&ProductBase[brief]=会员罹患30种重大疾病，遭遇意外伤害或过劳身故，最高可获得90万元的互助金&ProductBase[slogan]=重大疾病 | 意外伤害 | 过劳猝死&ProductBase[min_join_age]=18&ProductBase[max_join_age]=50&ProductBase[min_age]=18&ProductBase[max_age]=60&ProductBase[bzrq]=IT从业人员&ProductBase[bzfw]=30种重大疾病，意外伤害或过劳身故&ProductBase[compensation]=90000000&ProductBase[start_up_member_count]=6&ProductBase[best_member_count]=10&ProductBase[least_member_count]=4&ProductBase[prestore_amount_list]=29900&ProductBase[renew_amount_list]=29900,49900,99900,199900,499900&ProductBase[present_amount_list]=29900&ProductBase[allow_delegation]=0&ProductBase[allow_delegation]=1&ProductBase[allow_present]=0&ProductBase[allow_present]=1&ProductBase[mgmt_cost_discount]=0,0,0.9,0&ProductBase[prepare_duration]=15552000&ProductBase[dormant_duration]=2592000&ProductBase[protection_period]=31536000&ProductBase[publicity_duration]=864000&ProductBase[rank]=1&ProductBase[extra]={}&ProductBase[hidden]=0&ProductBase[subsidy]=0    ${plan_id}    #成长期：6人，运行期：10人    #休眠期：4人
+
+获取计划类型
+    [Arguments]    ${planId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】将格式类似于zjwy_product-1012的计划转换成zjwy_product（便于判断该计划是重疾无忧，还是IT安康）
+    ...
+    ...    【参数】plan_id：转换前的计划id
+    ...
+    ...    【返回值】 计划：转换后的计划id
+    @{计划Tuple}    Split String    ${planId}    -    #新增计划zjwy_product-XX格式
+    ${计划}    set variable    ${计划Tuple[0]}
+    log    ${计划}
+    [Return]    ${计划}

@@ -1,0 +1,81 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../../通用/L2接口层/支付.txt
+
+*** Keywords ***
+通用续存
+    [Arguments]    ${product_id}    ${holdId}    ${amount}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用续存接口
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；amount：续存金额
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    ${redirect_url}    set variable    /payment/payresult?product_id=${product_id}&order_type=2
+    发送POST请求    /ajax/order/pay    product_id=${product_id}&amount=${amount}&pay-way=wx_wap&client=mobile&ext[hold_id]=${holdId} &order_type=2&redirect_url=\&{redirect_url}
+
+余额续存保障金
+    [Arguments]    ${product_id}    ${holdId}    ${amount}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 余额续存保障金成功
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；amount：续存金额
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用续存    ${product_id}    ${holdId}    ${amount}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+
+微信续存保障金
+    [Arguments]    ${product_id}    ${holdId}    ${amount}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 微信续存保障金成功
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；amount：续存金额
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用续存    ${product_id}    ${holdId}    ${amount}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    #调用Ping++模拟支付请求
+    微信Ping++支付    ${ResponseBody}
+
+余额续存保障金失败
+    [Arguments]    ${product_id}    ${holdId}    ${amount}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 余额续存保障金成功
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；amount：续存金额
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用续存    ${product_id}    ${holdId}    ${amount}
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+
+微信续存保障金失败
+    [Arguments]    ${product_id}    ${holdId}    ${amount}    ${errorMsg}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 微信续存保障金失败
+    ...
+    ...    【参数】 product_id：产品Id；holdId：加入计划后holdId；amount：续存金额；errorMsg：错误信息
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用续存    ${product_id}    ${holdId}    ${amount}
+    校验Http返回码和ResponseBody    200    success    false
+    ${ResponseBody}    Get Response Body
+    ${Msg}    Get Json Value    ${ResponseBody}    /message
+    Should Be Equal As Strings    ${errorMsg}    ${Msg}

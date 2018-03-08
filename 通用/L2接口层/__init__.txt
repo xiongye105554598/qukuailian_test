@@ -1,0 +1,26 @@
+*** Keywords ***
+控制台赠送计划
+    [Arguments]    ${price}    ${quantity}    ${product}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    #获取控制台csrf值
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    #设置Http域名和header
+    获取登录态    ${consolePhone}    ${consoleCode}
+    设置Http域名
+    #设置控制台Cookies
+    ${dict}    设置控制台登录态的头-带Dictionary    ${csrfCookie}    ${csrfBody}
+    #获取当前时间戳
+    ${send_time} =    Get Time    epoch
+    ${expire_time}    set variable    ${send_time}+3*24*60*60
+    ${expire_form}    Get Time    ${expire_time}
+    #发送请求
+    ${multiple_files}    Create Dictionary    _csrf=(None,'${csrfBody}')    OpGift[name]=(None,test)    OpGift[type]=(None,1)    OpGift[quantity]=(None,'${quantity}')    OpGift[price]=(None,${price})
+    ...    OpGift[send_time]=(None,'${send_time}')    OpGift[expire_time]=(None,'${expire_time}')    dp_opgift-expire_time=(None,'${expire_form}')    OpGift[product_id]=(None,${price})    OpGift[state]=(None,1)    OpGift[token]=(None,)
+    ...    OpGift[bannerUrl]=(None,https://o5wxhp84r.qnssl.com/2016_10_18_17_35_25_5805ecdd14f65.jpg)    OpGift[pcBannerUrl]=(None,https://o5wxhp84r.qnssl.com/2016_10_18_17_35_25_5805ecdd14f65.jpg)    opgift-bannerbackground-source=(None,#ffbf25)    OpGift[bannerBackground]=(None,#FFBF25)    opgift-joinedtextcolor-source=(None,#cccccc)    OpGift[joinedTextColor]=(None,#ccc)
+    ...    OpGift[shareTitle]=(None,'同心互助赠送你一份最高30万元的保障 ')    OpGift[shareContent]=(None,'同心互助向你赠送了一份最高30万元的保障，赶紧点击领取 ')    OpGift[buttonText]=(None,'免费领取')    opgift-buttoncolor-source=(None,#ffffff)    OpGift[buttonColor]=(None,#fff)    opgift-buttonbackground-source=(None,#f63d36)
+    ...    OpGift[buttonBackground]=(None,#f63d36)    OpGift[channel]=(None,test)    OpGift[view]=(None,)    OpGift[redirectUrl]=(None,'/payment/payresult')    OpGift[showCoupon]=(None,0)    OpGift[phoneWhiteList]=(None,)
+    ...    OpGift[cardWhiteList]=(None,)    OpGift[rules]=(None,)
+    Create Session    creategift    http://www.txs.com    ${dict}
+    ${res}    Post Request    creategift    /admin/gift/create    \    headers=${dict}    files=${multiple_files}
+    校验Http返回码和ResponseBody    200    ${key}    ${value}

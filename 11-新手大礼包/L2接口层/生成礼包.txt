@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          ../L3DB层/hold.txt
+Resource          ../L3DB层/hold_gift.txt
+Resource          ../../通用/L2接口层/保障人.txt
+Resource          ../../通用/L2接口层/支付.txt
+Resource          ../L3DB层/gift.txt
+
+*** Keywords ***
+生成礼包返回gift_id和token
+    [Arguments]    ${phone}    ${product_id}    ${name}    ${idcard}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】该接口就是加入计划的接口
+    ${insured_id}    计划详情添加保障人成功    ${product_id}    ${name}    ${idcard}
+    #微信付费加入重疾无忧
+    微信支付    ${product_id}    ${insured_id}
+    #校验
+    ${hold_id}    查询最新一条hold_id    ${phone}
+    ${gift_id}    根据hold_id查询gift    ${hold_id}
+    ${token}    查询大礼包token    ${gift_id}
+    校验大礼包    ${gift_id}
+    [Return]    ${gift_id}    ${token}

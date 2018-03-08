@@ -1,0 +1,18 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+查询最新一条hold_id
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据用户手机号，按时间顺序查询最新一条hold的id
+    ...
+    ...    【参数】手机号
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #查询最新一条
+    ${HoldTuple}    Query    SELECT hold_id FROM hold WHERE user_id=${user_id} AND product_id="zjwy_product" \ ORDER BY created_at DESC LIMIT 1
+    [Return]    ${HoldTuple[0][0]}

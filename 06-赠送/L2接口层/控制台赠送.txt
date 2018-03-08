@@ -1,0 +1,43 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Library           RequestsLibrary
+Library           requests
+Resource          ../L3DB层/gift.txt
+Resource          获取csrf和token.txt
+
+*** Keywords ***
+控制台赠送计划
+    [Arguments]    ${name}    ${channel}    ${price}    ${quantity}    ${product}    ${key}
+    ...    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】控制台创建赠送
+    ...
+    ...    【参数】创建者姓名、渠道、价格、份数、产品id
+    #获取csrf
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    #获取登录态
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置http域名和头
+    设置Http域名
+    ${dict}    设置赠送控制台登录态的头    ${csrfCookie}    ${csrfBody}
+    log    ${dict}
+    #获取token
+    ${gift_token}    获取控制台赠送页token值
+    log    ${gift_token}
+    #获取时间
+    ${send_time} =    Get Time    epoch
+    ${expire_time}    Evaluate    ${send_time}+3*24*60*60
+    ${expire_form} =    Get Time    \    ${expire_time}
+    #设置请求变量
+    ${multiple_files}    Create Dictionary    _csrf=(None,'${csrfBody}')    OpGift[name]=${name}    OpGift[type]=1    OpGift[quantity]=${quantity}    OpGift[price]=${price}
+    ...    OpGift[send_time]=${send_time}    OpGift[expire_time]=${expire_time}    dp_opgift-expire_time=${expire_form}    OpGift[product_id]=${product}    OpGift[state]=1    OpGift[token]=${gift_token}
+    ...    OpGift[bannerUrl]=https://o5wxhp84r.qnssl.com/2016_10_18_17_35_25_5805ecdd14f65.jpg    OpGift[pcBannerUrl]=https://o5wxhp84r.qnssl.com/2016_10_18_17_35_25_5805ecdd14f65.jpg    opgift-bannerbackground-source=#ffbf25    OpGift[bannerBackground]=#FFBF25    opgift-joinedtextcolor-source=#cccccc    OpGift[joinedTextColor]=#ccc
+    ...    OpGift[shareTitle]=同心互助赠送你一份最高30万元的保障    OpGift[shareContent]=同心互助向你赠送了一份最高30万元的保障，赶紧点击领取    OpGift[buttonText]=免费领取    opgift-buttoncolor-source=#ffffff    OpGift[buttonColor]=#fff    opgift-buttonbackground-source=#f63d36
+    ...    OpGift[buttonBackground]=#f63d36    OpGift[channel]=${channel}    OpGift[redirectUrl]=/payment/payresult    OpGift[showCoupon]=0
+    Create Session    creategift    ${host}    ${dict}
+    #发送请求    #sessionName    #sessionName    #uri    #data    #header    #files
+    ${response}    Post Request    creategift    /admin/gift/create    data=${multiple_files}    headers=${dict}
+    log    ${response}
+    ${gift_id}    根据token查询gift    ${gift_token}
+    [Return]    ${gift_id}    ${gift_token}

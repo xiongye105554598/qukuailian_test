@@ -1,0 +1,21 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/保障人.txt
+
+*** Keywords ***
+计划详情添加保障人时不符合要求
+    [Arguments]    ${productId}    ${realname}    ${cardId}    ${errorMessage}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 计划详情页添加保障人，但保障人的年龄不符合要求，比较返回的错误信息
+    ...
+    ...    【参数】 productId：产品id，realname：保障人姓名，cardId：保障人身份证号
+    ...
+    ...    【返回值】无
+    计划详情添加保障人    ${productId}    ${realname}    ${cardId}
+    校验Http返回码和ResponseBody    200    success    false
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    #校验错误信息
+    ${错误信息}    Get Json Value    ${ResponseBody}    /message
+    Should Be Equal As Strings    ${errorMessage}    ${错误信息}

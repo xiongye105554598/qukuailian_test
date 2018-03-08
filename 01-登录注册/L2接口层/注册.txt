@@ -1,0 +1,16 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+注册
+    [Arguments]    ${phone}    ${code}    ${pwd}    ${repwd}    ${agreement}    ${key}
+    ...    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号、验证码、密码、重复密码、勾选协议、校验key、校验value
+    #设置Http域名和header
+    设置Http域名和不带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/register    RegisterForm%5Busername%5D=${phone}&RegisterForm%5Bcode%5D=${code}&RegisterForm%5Bpwd%5D=${pwd}&RegisterForm%5Brepwd%5D=${repwd}&agreement=${agreement}
+    #校验结果
+    校验Http返回码和ResponseBody    200    ${key}    ${value}

@@ -1,0 +1,23 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L2接口层/通用.txt
+
+*** Keywords ***
+修改加入计划时间
+    [Arguments]    ${holdId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 修改hold表中加入计划时间join_time，使得用户直接进入保障期
+    ...
+    ...    【参数】 hold_id：用户持有某计划的唯一标识
+    ...
+    ...    【返回值】无
+    连接数据库
+    ${joinTimeTuple}    query    select join_time from hold where hold_id=${holdId};
+    ${joinTime}    set variable    ${joinTimeTuple[0][0]}
+    ${joinTime}    Convert To String    ${joinTime}
+    ${joinTimeStamp}    get Time    epoch    ${joinTime}
+    ${newJoinTimeStamp}    Evaluate    ${joinTimeStamp}-181*24*60*60
+    ${newJoinTime}    get Time    \    ${newJoinTimeStamp}
+    log    ${newJoinTime}
+    Execute Sql String    UPDATE hold SET join_time = "${newJoinTime}" WHERE hold_id=${holdId};

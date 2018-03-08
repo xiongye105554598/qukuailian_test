@@ -1,0 +1,24 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+Resource          ../../资源/全局变量.txt
+Resource          ../../资源/字符串处理.txt
+
+*** Keywords ***
+登录
+    [Arguments]    ${username}    ${password}    ${verifycode}    ${type}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】 手机号、密码、验证码、类型
+    ...
+    ...    【说明】 type \ 1 密码登录 \ 2 验证码登录
+    #设置Http域名和header
+    设置Http域名和不带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/login    LoginForm%5Btype%5D=${type}&LoginForm%5Busername%5D=${username}&LoginForm%5Bpassword%5D=${password}&LoginForm%5Bverifycode%5D=${verifycode}    #String类型不是Json类型
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    #把Phone写进全局变量
+    Set Global Variable    ${LoginPhone}    ${username}
+    #把UserId写进全局变量
+    ${Id}    根据手机号查UserId    ${username}
+    Set Global Variable    ${UserId}    ${Id}

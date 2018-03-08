@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验实名认证成功auth表记录
+    [Arguments]    ${phone}    ${name}    ${idcard}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据UserId查询auth表中记录，校验姓名、身份证、认证状态是否正确
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Row Count Is Equal To X    SELECT * FROM account_authentication WHERE user_id=${user_id}    1
+    ${AuthTuple}    Query    SELECT * FROM account_authentication WHERE user_id=${user_id}
+    #检查身份证
+    Should Be Equal    ${idcard}    ${AuthTuple[0][1]}
+    #检查姓名
+    Should Be Equal    ${name}    ${AuthTuple[0][2]}
+    #检查认证状态
+    Should Be Equal As Strings    2    ${AuthTuple[0][3]}

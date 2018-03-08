@@ -1,0 +1,23 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/支付.txt
+
+*** Keywords ***
+充值
+    [Arguments]    ${amount}    ${client}    ${way}    ${url}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】充值金额、充值环境（APP/PC/Web）、支付方式、跳转页面、校验key、校验value
+    ...
+    ...    【返回值】返回充值的charge_id
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送充值请求
+    发送POST请求    /ajax/order/charge    order_type=9&redirect_url=${url}&client=${client}&amount=${amount}&pay-way=${way}    #充值的order_type是9
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    ${Value}    Get Json Value    ${ResponseBody}    /${key}
+    #充值请求成功，再调Ping++
+    ${ch_id}    Run Keyword If    "${Value}"=="true"    微信Ping++支付    ${ResponseBody}
+    [Return]    ${ch_id}

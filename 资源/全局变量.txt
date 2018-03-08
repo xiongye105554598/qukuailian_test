@@ -1,0 +1,7 @@
+*** Variables ***
+${UserId}         ${EMPTY}    #当前用户ID
+${LoginPhone}     ${EMPTY}    #当前用户手机号
+${ResponseCookie}    ${EMPTY}    #登录请求返回的Cookie
+${AjaxSign}       ${EMPTY}    #Cookie中的Ajax签名
+${GuestId}        ${EMPTY}    #Cookie字段
+${邀请奖励}           0    # 邀请奖励金额，单位分

@@ -1,0 +1,55 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+校验大礼包
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据gift_id校验gift，校验price、产品id、state、type、数量等
+    ...
+    ...    【参数】gift_id
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    #查询最新一条
+    ${GiftTuple}    Query    SELECT product_id, price, state, type, quantity FROM gift WHERE id = ${gift_id}
+    #校验产品id
+    Should Be Equal As Strings    ${GiftTuple[0][0]}    zjwy_product
+    #校验price
+    Should Be Equal As Strings    ${GiftTuple[0][1]}    900
+    #校验state
+    Should Be Equal As Strings    ${GiftTuple[0][2]}    1
+    #校验type
+    Should Be Equal As Strings    ${GiftTuple[0][3]}    2    #大礼包的类型是2
+    #校验数量
+    Should Be True    ${GiftTuple[0][4]}>=1    #大礼包数量在1-3之间
+    Should Be True    ${GiftTuple[0][4]}<=3    #大礼包数量在1-3之间
+
+查询大礼包token
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据gift_id校验gift，返回大礼包token
+    ...
+    ...    【参数】gift_id
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    #查询最新一条
+    ${GiftTuple}    Query    SELECT token FROM gift WHERE id = ${gift_id}
+    [Return]    ${GiftTuple[0][0]}
+
+查询大礼包剩余金额
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据gift_id校验gift，返回大礼包剩余金额
+    ...
+    ...    【参数】gift_id
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    #查询最新一条
+    ${GiftTuple}    Query    SELECT left_amount FROM gift WHERE id = ${gift_id}
+    [Return]    ${GiftTuple[0][0]}

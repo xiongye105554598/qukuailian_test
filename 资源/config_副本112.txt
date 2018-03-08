@@ -1,0 +1,12 @@
+*** Variables ***
+${db}             abc    # 库名
+${dbuser}         testgroup    # 数据库账号
+${dbpassword}     AutotestGrp    # 数据库密码
+${dbhost}         10.11.255.113    # 数据库地址
+${dbpost}         3306    # 数据库端口号
+${apiurl}         www.test-txs.com    # api的地址
+${redisHost}      10.11.255.113    # redis地址
+${redisPort}      7999    # redis端口
+${consolePhone}    15071025463    #控制台账户的用户名
+${consoleCode}    1507    #控制台账户的短信验证码
+${host}           http://www.test-txs.com    #域名

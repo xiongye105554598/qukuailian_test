@@ -1,0 +1,20 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+编辑保障人
+    [Arguments]    ${insured_id}    ${company}    ${major}    ${minor}    ${job}    ${email}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 编辑保障人信息
+    ...
+    ...    【参数】 insured_id：保障人ID，company：保障人公司，major：保障人行业；minor：保障人职业；job：保障人职位；email：保障人邮箱
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/editinsured    OccupationForm[company]=${company}&OccupationForm[major]=${major}&OccupationForm[minor]=${minor}&OccupationForm[job]=${job}&OccupationForm[email]=${email}&insured_id=${insured_id}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    GET Response Body
+    log    ${ResponseBody}

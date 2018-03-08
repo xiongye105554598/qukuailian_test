@@ -1,0 +1,17 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验保障人是否存在
+    [Arguments]    ${phone}    ${idcard}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据用户id和身份证号校验保障人是否存在
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM insured WHERE user_id=${user_id} AND card_no="${idcard}"
+    ${InsuredTuple}    Query    SELECT insured_id FROM insured WHERE user_id=${user_id} AND card_no="${idcard}"
+    [Return]    ${InsuredTuple[0][0]}

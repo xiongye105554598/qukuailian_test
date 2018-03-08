@@ -1,0 +1,61 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查询某保障人信息
+    [Arguments]    ${insured_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询某保障人信息，返回该保障人的详细信息
+    ...
+    ...    【参数】 insured_id：保障人ID
+    ...
+    ...    【返回值】 ResponseBody：查询到的该保障人信息
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /ajax/account/getinsured?insured_id=${insured_id}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    [Return]    ${ResponseBody}
+
+校验某保障人信息
+    [Arguments]    ${保障人信息}    ${保障人Id}    ${保障人姓名}    ${保障人身份证号}    ${保障人公司}    ${保障人行业}
+    ...    ${保障人职业}    ${保障人职位}    ${保障人邮箱}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验接口返回的保障人信息的各字段与预期的保障人信息各字段是否一致
+    ...
+    ...    【参数】 保障人信息：接口返回的保障人信息；保障人ID；保障人姓名；保障人身份证号；保障人公司；保障人行业；保障人职业；保障人职位；保障人邮箱
+    ...
+    ...    【返回值】 无
+    #校验保障人ID
+    ${insured_id}    Get Json Value    ${保障人信息}    /data/insured_id
+    Should Be Equal As Strings    ${保障人Id}    ${insured_id}
+    #校验保障人姓名
+    ${real_name}    Get Json Value    ${保障人信息}    /data/real_name
+    Should Be Equal As Strings    "${保障人姓名}"    ${real_name}
+    #校验保障人性别
+    ${gender}    Get Json Value    ${保障人信息}    /data/gender
+    Should Be Equal As Strings    1    ${gender}
+    #校验保障人身份证号
+    ${card_no}    Get Json Value    ${保障人信息}    /data/card_no
+    ${保障人身份证号前4位}    Get SubString    ${保障人身份证号}    0    4    #获取身份证前4位
+    ${保障人身份证号后4位}    Get SubString    ${保障人身份证号}    14    18    #获取身份证后4位
+    Should Be Equal As Strings    "${保障人身份证号前4位}**********${保障人身份证号后4位}"    ${card_no}
+    #校验保障人公司
+    ${company}    Get Json Value    ${保障人信息}    /data/company
+    Should Be Equal As Strings    "${保障人公司}"    ${company}
+    #校验保障人行业
+    ${major}    Get Json Value    ${保障人信息}    /data/major
+    Should Be Equal As Strings    "${保障人行业}"    ${major}
+    #校验保障人职业
+    ${minor}    Get Json Value    ${保障人信息}    /data/minor
+    Should Be Equal As Strings    "${保障人职业}"    ${minor}
+    #校验保障人职位
+    ${job}    Get Json Value    ${保障人信息}    /data/job
+    Should Be Equal As Strings    "${保障人职位}"    ${job}
+    #校验保障人邮箱
+    ${email}    Get Json Value    ${保障人信息}    /data/email
+    Should Be Equal As Strings    "${保障人邮箱}"    ${email}

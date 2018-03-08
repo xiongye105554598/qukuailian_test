@@ -1,0 +1,100 @@
+*** Settings ***
+Resource          ../../资源/清理数据.txt
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/生成礼包.txt
+Resource          ../../06-赠送/L2接口层/领取赠送.txt
+Resource          ../../06-赠送/L3DB层/account_gift.txt
+Resource          ../../06-赠送/L3DB层/gift.txt
+Resource          ../../06-赠送/L2接口层/加入赠送计划.txt
+Resource          ../../06-赠送/L3DB层/hold.txt
+Resource          ../../06-赠送/L2接口层/打开赠送页面.txt
+Resource          ../L3DB层/gift.txt
+
+*** Test Cases ***
+领取并加入大礼包成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】用户A加入生成大礼包，用户B加入大礼包
+    ...
+    ...    【前提】赠送者和领取者都必须未加入过重疾无忧
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23854290001
+    ${验证码1}    set variable    1204
+    ${赠送保障人姓名}    set variable    赠送大礼包
+    ${赠送保障人身份证号}    set variable    360101198801012045
+    ${用户手机号}    set variable    23854290002
+    ${验证码2}    set variable    2204
+    ${领取保障人姓名}    set variable    领取大礼包
+    ${领取保障人身份证号}    set variable    36010119880101098X
+    ${产品id}    set variable    zjwy_product
+    #赠送者登录
+    获取登录态    ${赠送者手机号}    ${验证码1}
+    #加入计划获取大礼包
+    ${赠送id}    ${赠送token}    生成礼包返回gift_id和token    ${赠送者手机号}    ${产品id}    ${赠送保障人姓名}    ${赠送保障人身份证号}
+    #领取者登录
+    获取登录态    ${用户手机号}    ${验证码2}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码2}    你已获得免费加入该计划资格    #领取成功的提示文案
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    1    #领取未加入state=1
+    #加入前清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品id}    ${赠送id}
+    #添加保障人
+    ${保障人Id}    我的保障人添加保障人成功    ${领取保障人姓名}    ${领取保障人身份证号}    北京阿博茨科技有限公司    IT业    测试
+    ...    测试工程师    test@niub.la
+    #加入计划
+    加入用户赠送计划    ${产品id}    app    wx    ${赠送id}    ${保障人Id}    /payment/payresult?product_id=zjwy_product&order_type=1
+    ...    success    true
+    #校验account_gift
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    2    #领取且加入state=2
+    #校验left_amount
+    校验gift的剩余金额    ${赠送id}
+    #校验amount
+    校验gift的已加金额    ${赠送id}
+    #校验hold
+    校验加入成功的hold    ${用户手机号}    ${赠送id}    ${产品id}    ${保障人Id}    900
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品id}    ${赠送id}
+    [Teardown]    清理已加入的用户    ${赠送者手机号}    ${赠送保障人身份证号}    0
+
+领取未加入名额恢复无退款
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】用户A加入生成大礼包，用户B加入大礼包
+    ...
+    ...    【前提】赠送者和领取者都必须未加入过重疾无忧
+    [Tags]    yuewang
+    ${赠送者手机号}    set variable    23854290001
+    ${验证码1}    set variable    1204
+    ${赠送保障人姓名}    set variable    赠送大礼包
+    ${赠送保障人身份证号}    set variable    360101198801012045
+    ${用户手机号}    set variable    23854290002
+    ${验证码2}    set variable    2204
+    ${领取保障人姓名}    set variable    领取大礼包
+    ${领取保障人身份证号}    set variable    36010119880101098X
+    ${产品id}    set variable    zjwy_product
+    #赠送者登录
+    获取登录态    ${赠送者手机号}    ${验证码1}
+    #赠送前预设账户余额
+    设置账户余额    ${赠送者手机号}    0    #余额预设为0
+    #加入计划获取大礼包
+    ${赠送id}    ${赠送token}    生成礼包返回gift_id和token    ${赠送者手机号}    ${产品id}    ${赠送保障人姓名}    ${赠送保障人身份证号}
+    #领取者登录
+    获取登录态    ${用户手机号}    ${验证码2}
+    #领取赠送    #gift_id    #token    #领取手机号    #验证码
+    领取赠送    ${赠送id}    ${赠送token}    ${用户手机号}    ${验证码2}    你已获得免费加入该计划资格    #领取成功的提示文案
+    ${剩余金额1}    查询大礼包剩余金额    ${赠送id}
+    #清理数据
+    清理赠送加入数据    ${用户手机号}    ${产品id}    ${赠送id}
+    #修改过期时间
+    修改领取赠送时间过期    ${赠送id}    ${用户手机号}
+    #刷新页面让赠送过期
+    打开赠送页面    ${赠送id}    ${赠送token}
+    #校验领取状态
+    校验领取成功的account_gift    ${用户手机号}    ${赠送id}    3
+    #校验退款
+    校验账户余额    ${赠送者手机号}    0
+    ${剩余金额2}    查询大礼包剩余金额    ${赠送id}
+    #校验剩余金额恢复
+    Should Be True    ${剩余金额2}==${剩余金额1}+900
+    [Teardown]    清理已加入的用户    ${赠送者手机号}    ${赠送保障人身份证号}    0

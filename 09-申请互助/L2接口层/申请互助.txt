@@ -1,0 +1,66 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Library           RequestsLibrary
+Library           requests
+Resource          ../../通用/L2接口层/通用.txt
+
+*** Keywords ***
+申请互助请求
+    [Arguments]    ${持有计划的HoldId}    ${持有计划的保障项目}    ${msg}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用申请互助请求接口，判断返回信息中是否包含特定信息
+    ...
+    ...    【参数】 持有计划的HoldId；持有计划的保障项目；msg：返回信息中包含的特定文案
+    ...
+    ...    【返回值】无
+    #获取控制台csrf
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置Http域名和header
+    设置Http域名
+    ${dict}    设置控制台申请互助登录态的头    ${csrfCookie}    ${csrfBody}
+    #申请互助变量
+    ${insuranceId}    set variable    ${持有计划的保障项目}
+    ${holdId}    set variable    ${持有计划的HoldId}
+    ${holdId}    去除多余的引号    ${holdId}
+    ${insuranceId}    去除多余的引号    ${insuranceId}
+    ${compensation}    set variable    1000000
+    #设置请求变量
+    ${multiple_files}    Create Dictionary    _csrf=(None,'${csrfBody}')    ClaimInfo[insurance_id]=${insuranceId}    ClaimInfo[hold_id]=${holdId}    ClaimInfo[compensation]=${compensation}    ClaimInfo[claim_user_base_info]=<p style="margin-left: 40px;">手机号：15071025463<br></p>
+    ...    ClaimInfo[claim_overview]=<p>得了胃癌</p>    ClaimInfo[claim_doc]=<p>医疗卡</p>    ClaimInfo[claim_detail_info]=<p>大家都来帮助他</p>    ClaimInfo[claim_audit_info]=<p style="margin-left: 20px;">武汉同济医院</p>
+    Create Session    createclaim    ${host}
+    #发送post请求    #sessionName    #sessionName    #uri    #data    #header    #files
+    ${response}    Post Request    createclaim    /admin/claim/create    data=${multiple_files}    headers=${dict}
+    log    ${response}
+    Should Contain    ${response.content}    ${msg}
+    Delete All Sessions
+
+保障人信息查询
+    [Arguments]    ${保障人身份证号}    ${保障人姓名}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用保障人信息查询接口，获取用户的holdId和保障的项目
+    ...
+    ...    【参数】 保障人身份证号；保障人姓名
+    ...
+    ...    【返回值】HoldId：保障人持有的计划holdId；InsuranceId：保障人持有的计划的Insurance
+    #设置域名和头
+    设置控制台域名和带登录态的头
+    #发送请求
+    发送GET请求    /admin/ajax/ajax/search-hold-with-id-card-no?id_card_no=${保障人身份证号}&real_name=${保障人姓名}
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    #从响应中获取    #holdId和insurance
+    ${Holds}    Get Json Value    ${ResponseBody}    /data/holds
+    ${HoldsArray}    Parse Json    ${Holds}
+    ${Hold}    Stringify Json    ${HoldsArray[0]}
+    ${HoldId}    Get Json Value    ${Hold}    /hold_id
+    log    ${HoldId}
+    ${Plans}    Get Json Value    ${Hold}    /plans
+    ${PlansArray}    Parse Json    ${Plans}
+    ${Plan}    Stringify Json    ${PlansArray[0]}
+    ${InsuranceId}    Get Json Value    ${Plan}    /id
+    log    ${InsuranceId}
+    [Return]    ${HoldId}    ${InsuranceId}

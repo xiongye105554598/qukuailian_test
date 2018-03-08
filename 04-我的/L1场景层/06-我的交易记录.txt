@@ -1,0 +1,39 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/交易记录.txt
+Resource          ../../资源/清理数据.txt
+
+*** Test Cases ***
+查看我的交易记录
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看交易记录
+    ...
+    ...    【前提】用户交易记录个数不为0
+    [Tags]    yuewang
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #获取用户交易记录    #查看    #offset    #count    #校验key    #校验value
+    ${body}    查看我的交易记录    0    20    success    true
+    #校验交易记录
+    校验我的交易记录不为空    ${body}    20
+
+我的交易记录为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看交易记录
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #清理交易记录
+    清理交易记录为0    ${手机号}
+    #获取用户交易记录    #查看    #offset    #limt    #校验key    #校验value
+    ${body}    查看我的交易记录    0    20    success    true
+    #校验保障人
+    校验我的交易记录为空    ${body}

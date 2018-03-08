@@ -1,0 +1,43 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/通用.txt
+
+*** Keywords ***
+查看我的公示
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 免登陆接口，调用查看我的公示接口，返回公示中第一个公示Id
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】ClaimId：公示ID
+    #设置Http域名
+    设置Http域名和不带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /ajax/home/claims
+    校验Http返回码和ResponseBody    200    success    true
+    #从响应中查找ClaimId
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    ${dataValue}    Get Json Value    ${ResponseBody}    /data
+    ${dataValueArray}    Parse Json    ${dataValue}
+    ${claimInfo}    Stringify Json    ${dataValueArray[0]}
+    ${ClaimId}    Get Json Value    ${claimInfo}    /claim_id
+    log    ${ClaimId}
+    [Return]    ${ClaimId}
+
+查看公示详情
+    [Arguments]    ${ClaimId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 免登陆接口，调用查看公示详情接口，校验接口能否正常运行
+    ...
+    ...    【参数】 ClaimId：公示ID
+    ...
+    ...    【返回值】无
+    #设置Http域名
+    设置Http域名和不带登录态的头
+    #发送请求和校验返回
+    ${ClaimId}    去除多余的引号    ${ClaimId}
+    发送GET请求    /community/publicationtrends?claim_id=${ClaimId}
+    校验Http返回码    200

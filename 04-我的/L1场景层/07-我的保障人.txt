@@ -1,0 +1,40 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/保障人.txt
+Resource          ../L3DB层/insured.txt
+Resource          ../../资源/清理数据.txt
+
+*** Test Cases ***
+查看我的保障人
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看保障人
+    ...
+    ...    【前提】用户保障人个数不为0
+    [Tags]    yuewang
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #获取保障人    #查看    #校验key    #校验value
+    ${body}    查看我的保障人    success    true
+    #校验保障人
+    校验我的保障人个数    ${body}    ${手机号}
+
+我的保障人为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】查看保障人
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #清理保障人
+    清理保障人为0    ${手机号}
+    #获取保障人    #查看    #校验key    #校验value
+    ${body}    查看我的保障人    success    true
+    #校验保障人
+    校验我的保障人个数    ${body}    ${手机号}

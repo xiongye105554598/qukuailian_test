@@ -1,0 +1,116 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L3DB层/account_authentication.txt
+Resource          ../../资源/全局变量.txt
+Resource          ../L3DB层/insured.txt
+Resource          ../../资源/清理数据.txt
+Resource          ../../资源/redis.txt
+Resource          ../../通用/L2接口层/实名认证.txt
+
+*** Test Cases ***
+实名认证成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】实名认证成功，成功后清理实名认证信息，以便下次执行
+    ...
+    ...    【前置条件】已注册用户，未实名
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803    #未实名用户
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    ${姓名}    set variable    煎熬
+    ${身份证}    set variable    350101198201010036
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #清理该用户信息
+    清理实名认证信息    ${手机号}    ${身份证}
+    #实名认证
+    实名认证    ${姓名}    ${身份证}    ${验证码}    success    true
+    #检查数据库
+    校验实名认证成功auth表记录    ${手机号}    ${姓名}    ${身份证}
+    校验实名认证成功insured表记录    ${手机号}    ${姓名}    ${身份证}
+    #清理该用户信息
+    清理实名认证信息    ${手机号}    ${身份证}
+    [Teardown]
+
+已认证用户实名
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】已认证用户进行实名
+    ...
+    ...    【前置条件】已注册用户，已实名
+    [Tags]    yuewang
+    ${手机号}    set variable    13437255701    #该手机号已实名
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    ${姓名}    set variable    煎熬
+    ${身份证}    set variable    350101198201010036
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #实名认证
+    实名认证    ${姓名}    ${身份证}    ${验证码}    success    false
+    #检查message
+    校验Http ResponseBody    message    "已认证账户,不能再次认证"
+    [Teardown]
+
+身份证已被其他用户实名
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】实名认证时的身份证已被其他用户实名
+    ...
+    ...    【前置条件】已注册用户，未实名，身份证被其他用户实名
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    ${姓名}    set variable    王月
+    ${身份证}    set variable    511381199002210287    #该身份证被其他用户实名
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #实名认证
+    实名认证    ${姓名}    ${身份证}    ${验证码}    success    false
+    #检查message
+    校验Http ResponseBody    message    "该保障人已被其他账户设置为账户持有人"
+    [Teardown]
+
+用户名和身份证不匹配
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】实名认证时，用户名和身份证不匹配
+    ...
+    ...    【前置条件】已注册用户，未实名，输入的身份证与姓名不符（线下没有开付费的实名认证，只要一条与idcard_auth表中不符的记录即可）
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    ${姓名}    set variable    煎熬熬    #姓名与身份证不符
+    ${身份证}    set variable    350101198201010036    #姓名与身份证不符
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #清理该用户信息
+    清理实名认证信息    ${手机号}    ${身份证}
+    #实名认证
+    实名认证    ${姓名}    ${身份证}    ${验证码}    success    false
+    #检查message
+    校验Http ResponseBody    message    "姓名与身份证号不匹配"
+    [Teardown]
+
+验证码错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】实名认证时，验证码错误
+    ...
+    ...    【前置条件】已注册用户，未实名
+    [Tags]    yuewang
+    ${手机号}    set variable    18571726803
+    ${正确验证码}    根据手机号生成验证码    ${手机号}
+    ${错误验证码}    set variable    1111
+    ${姓名}    set variable    煎熬
+    ${身份证}    set variable    350101198201010036
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${正确验证码}
+    #用户已实名    #验证码（错误的）
+    实名认证    ${姓名}    ${身份证}    ${错误验证码}    success    false
+    #检查message
+    校验Http ResponseBody    message    "验证码不正确"
+    #清理redis
+    查询验证码错误次数    ${手机号}
+    清除验证码错误次数    ${手机号}
+    解除验证码错误帐号锁定    ${手机号}
+    [Teardown]

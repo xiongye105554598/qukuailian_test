@@ -1,0 +1,33 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L2接口层/通用.txt
+
+*** Keywords ***
+校验申请互助任务
+    [Arguments]    ${hold_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询claimTask中是否有包含该holdId的任务
+    ...
+    ...    【参数】 holdId：用户持有计划的唯一标识
+    ...
+    ...    【返回值】无
+    ${hold_id}    去除多余的引号    ${hold_id}
+    连接数据库
+    ${claimTaskTuple}    query    SELECT * FROM `claim_task` WHERE param LIKE "%${hold_id}%";
+    ${claimTaskLen}    get length    ${claimTaskTuple}
+    Should Be Equal As Strings    ${claimTaskLen}    1
+
+校验申请互助审核任务
+    [Arguments]    ${ClaimId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据claimId查询claim_task中的任务数量
+    ...
+    ...    【参数】 claimId：申请互助的唯一标识
+    ...
+    ...    【返回值】claimTaskLen：claimId对应的申请互助任务数量
+    连接数据库
+    ${claimTaskTuple}    query    SELECT * FROM claim_task WHERE param LIKE "%${ClaimId}%";
+    ${claimTaskLen}    get length    ${claimTaskTuple}
+    [Return]    ${claimTaskLen}

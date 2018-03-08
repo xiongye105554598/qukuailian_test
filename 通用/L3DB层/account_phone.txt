@@ -1,0 +1,58 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Library           String
+
+*** Keywords ***
+根据手机号查UserId
+    [Arguments]    ${Phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据手机号查询user_id，如果存在则返回user_id，如果不存在则返回empty
+    连接数据库
+    ${UserIdTuple}    Query    SELECT id FROM account_phone WHERE phone=${Phone}
+    ${Len}    Get Length    ${UserIdTuple}
+    #如果手机号存在/不存在
+    ${UserId}    Run Keyword If    ${Len}==0    set variable    ${EMPTY}    ELSE    set variable
+    ...    ${UserIdTuple[0][0]}
+    log    ${UserId}
+    [Return]    ${UserId}
+
+校验账户余额
+    [Arguments]    ${Phone}    ${balance}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验查询到的账户余额是否为预期的账户余额
+    ...
+    ...    【参数】 Phone：用户手机号；balance：账户余额
+    ...
+    ...    【返回值】 无
+    ${UserId}    根据手机号查UserId    ${Phone}
+    连接数据库
+    ${BalanceTuple}    Query    SELECT balance FROM account_phone WHERE phone=${Phone}
+    Should Be Equal As Strings    ${balance}    ${BalanceTuple[0][0]}
+
+查询账户余额
+    [Arguments]    ${Phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据手机号查询balance，如果存在则返回balance，如果不存在则返回empty
+    连接数据库
+    ${BalanceTuple}    Query    SELECT balance FROM account_phone WHERE phone=${Phone}
+    ${Len}    Get Length    ${BalanceTuple}
+    #如果手机号存在/不存在
+    ${balance}    Run Keyword If    ${Len}==0    set variable    ${EMPTY}    ELSE    set variable
+    ...    ${BalanceTuple[0][0]}
+    log    ${balance}
+    [Return]    ${balance}
+
+设置账户余额
+    [Arguments]    ${phone}    ${balance}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据手机号查询balance，如果存在则返回balance，如果不存在则返回empty
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM account_phone WHERE phone=${Phone}
+    #设置余额
+    Execute Sql String    UPDATE account_phone SET balance = ${balance} WHERE phone = ${phone}
+    [Return]    ${balance}

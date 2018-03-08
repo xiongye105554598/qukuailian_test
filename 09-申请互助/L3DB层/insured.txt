@@ -1,0 +1,20 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+查询未退出计划的用户
+    [Arguments]    ${phone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询未退出计划的某1名用户，返回该用户的姓名和身份证号
+    ...
+    ...    【参数】 phone：用户手机号
+    ...
+    ...    【返回值】realName：姓名，cardNo：身份证号
+    连接数据库
+    ${userId}    根据手机号查UserId    ${phone}
+    ${HoldTuple}    query    SELECT real_name,card_no FROM `insured` WHERE insured_id IN (SELECT OWNER FROM hold WHERE user_id=${userId} AND is_out="0") LIMIT 1;
+    ${realName}    set variable    ${HoldTuple[0][0]}
+    ${cardNo}    set variable    ${HoldTuple[0][1]}
+    [Return]    ${realName}    ${cardNo}

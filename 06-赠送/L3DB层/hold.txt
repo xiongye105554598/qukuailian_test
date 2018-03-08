@@ -1,0 +1,59 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验加入成功的hold
+    [Arguments]    ${phone}    ${gift_id}    ${product_id}    ${insured_id}    ${price}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号、gift_id、产品id、保障人id、赠送金额
+    ...
+    ...    【说明】校验hold中保障人、产品id、保障金是否赠送
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM hold WHERE user_id = ${user_id} AND gift_id=${gift_id}
+    ${HoldTuple}    Query    SELECT owner, product_id, prestore_balance FROM hold WHERE gift_id = ${gift_id} AND user_id=${user_id}
+    #检查保障人
+    Should Be Equal As Strings    ${HoldTuple[0][0]}    ${insured_id}
+    #检查产品ID
+    Should Be Equal As Strings    ${HoldTuple[0][1]}    ${product_id}
+    #检查保障金
+    Should Be Equal As Strings    ${HoldTuple[0][2]}    ${price}
+
+校验加入成功的hold带渠道
+    [Arguments]    ${phone}    ${gift_id}    ${product_id}    ${insured_id}    ${price}    ${channel}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号、gift_id、产品id、保障人id、赠送金额、渠道
+    ...
+    ...    【说明】校验hold中保障人、产品id、保障金、渠道是否赠送
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM hold WHERE user_id = ${user_id} AND gift_id=${gift_id}
+    ${HoldTuple}    Query    SELECT owner, product_id, prestore_balance, channel FROM hold WHERE gift_id = ${gift_id} AND user_id=${user_id}
+    #检查保障人
+    Should Be Equal As Strings    ${HoldTuple[0][0]}    ${insured_id}
+    #检查产品ID
+    Should Be Equal As Strings    ${HoldTuple[0][1]}    ${product_id}
+    #检查保障金
+    Should Be Equal As Strings    ${HoldTuple[0][2]}    ${price}
+    #检查渠道
+    Should Be Equal As Strings    ${HoldTuple[0][3]}    ${channel}
+
+校验加入不成功的hold
+    [Arguments]    ${phone}    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号、gift_id、产品id、保障人id、赠送金额
+    ...
+    ...    【说明】校验hold中保障人、产品id、保障金是否赠送
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Not Exists In Database    SELECT * FROM hold WHERE user_id = ${user_id} AND gift_id=${gift_id}

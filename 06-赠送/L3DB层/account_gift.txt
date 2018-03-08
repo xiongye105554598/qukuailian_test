@@ -1,0 +1,33 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验领取成功的account_gift
+    [Arguments]    ${phone}    ${gift_id}    ${state}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号、赠送id、赠送状态
+    ...
+    ...    【说明】在account_gift中根据gift_id查询该用户是否已领取，以及领取状态（待加入1，已加入2，已过期3）
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM account_gift WHERE gift_id = ${gift_id} AND user_id=${user_id}
+    ${AccGiftTuple}    Query    SELECT state FROM account_gift WHERE gift_id = ${gift_id} AND user_id=${user_id}
+    #检查state
+    Should Be Equal As Strings    ${AccGiftTuple[0][0]}    ${state}
+
+校验领取不成功的account_gift
+    [Arguments]    ${phone}    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号、赠送id、赠送状态
+    ...
+    ...    【说明】在account_gift中根据gift_id查询该用户是否已领取
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Not Exists In Database    SELECT * FROM account_gift WHERE gift_id = ${gift_id} AND user_id=${user_id}

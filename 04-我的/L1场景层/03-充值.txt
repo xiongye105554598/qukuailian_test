@@ -1,0 +1,269 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/充值.txt
+Resource          ../L3DB层/order.txt
+
+*** Test Cases ***
+App充值
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】APP充值：client=app，pay_way=wx；充值完成跳转到充值成功页面
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    1000    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    true    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+PC充值
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】PC充值：client=web，pay_way=wechat；充值完成跳转到交易记录页面
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    1000    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    web    wechat    /pc/personal/transactiondetail    success
+    ...    true    #web是客户端，wechat是充值方式    /pc/personal/transactiondetail是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验操作交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+手机浏览器充值
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】手机浏览器充值：client=mobile，pay_way=wx_wap；充值完成跳转到充值成功页面
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    1000    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    mobile    wx_wap    /me/success    success
+    ...    true    #mobile是客户端，wx_wap是充值方式    /me/success是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验操作交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+充值成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    50000    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    true    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验操作交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+充值1元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值下限是1元
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    100    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    true    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验操作交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+充值1000元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值上限1000元
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    100000    #以分为单位
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    true    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #充值后校验余额
+    校验账户余额    ${手机号}    ${充值金额}
+    #校验操作交易记录
+    校验充值交易记录    ${ch_id}    ${手机号}    ${充值金额}
+
+充值金额小于1元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值下限是1元，充值小于1元，无法充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    20    #以分为单位，小于1元
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "最低充值金额1元"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变
+
+充值金额大于1000元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值上限1000元，充值大于1000，无法成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    200000    #以分为单位，大于1000元
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "最高充值金额1000元"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变
+
+充值0元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值0元，无法充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    0    #金额为0
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "支付金额不正确"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变
+
+充值金额为负
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值为负数，无法充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    -200    #以分为单位，为负数
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "支付金额不正确"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变
+
+充值金额非数字
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值为非数字，无法充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    abcc**#汉字123    #非数字
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "支付金额不正确"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变
+
+充值金额为小数
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】充值金额为小数，无法充值成功
+    ...
+    ...    【前提】已注册用户
+    [Tags]    yuewang
+    ${充值金额}    set variable    100.99    #金额为小数
+    ${手机号}    set variable    13437255701
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录获取Cookie
+    获取登录态    ${手机号}    ${验证码}
+    #充值前设置余额为0
+    设置账户余额    ${手机号}    0
+    #充值
+    ${ch_id}    充值    ${充值金额}    app    wx    /me/success    success
+    ...    false    #app是客户端，wx是充值方式    /me/success是跳转页面
+    #检查message
+    校验Http ResponseBody    message    "支付金额不正确"
+    #充值后校验余额
+    校验账户余额    ${手机号}    0    #余额不变

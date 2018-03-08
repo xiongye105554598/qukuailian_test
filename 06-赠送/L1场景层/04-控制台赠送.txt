@@ -1,0 +1,11 @@
+*** Settings ***
+Resource          ../L2接口层/控制台赠送.txt
+
+*** Test Cases ***
+控制台赠送计划
+    [Documentation]    【作者】yuewang    #控制台赠送计划    赠送者姓名    #赠送渠道    赠送金额    赠送份数    #产品名称    #校验key    #校验金额    #控制台创建赠送    创建者姓名    渠道    金额    份数    产品    key    #value
+    ...
+    ...    【说明】控制台创建赠送计划
+    [Tags]    yuewang
+    控制台赠送计划    wangyue    wy_test    900    1    zjwy_product    success
+    ...    true

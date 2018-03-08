@@ -1,0 +1,67 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+根据时间校验赠送交易记录（赠送）
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】用户手机号
+    ...
+    ...    【返回】order_id
+    ...
+    ...    【说明】适用于余额支付，根据时间倒序找出最新一条交易记录（因为余额支付没有ch_id可循）。校验赠送金额、state是否正确
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM `order` WHERE uid = ${user_id} AND order_type = 5 ORDER BY create_at DESC LIMIT 1
+    #按时间顺序找出最新一条
+    ${OrderTuple}    Query    SELECT state, order_id FROM `order` WHERE uid = ${user_id} AND order_type = 5 ORDER BY create_at DESC LIMIT 1
+    #检查state
+    Should Be Equal    ${OrderTuple[0][0]}    2    #支付成功的state为2
+    ${order_id}    set variable    ${OrderTuple[0][1]}
+    [Return]    ${order_id}
+
+根据ch_id校验赠送交易记录（赠送）
+    [Arguments]    ${ch_id}    ${phone}    ${amount}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】ch_id、用户手机号、赠送总金额
+    ...
+    ...    【返回】order_id
+    ...
+    ...    【说明】适用于微信支付，微信支付有char_id，根据char_id找出order_id。校验赠送金额、state是否正确
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM `order` WHERE pay_order_id="${ch_id}"
+    ${OrderTuple}    Query    SELECT uid, order_type, amount, state, \ order_id FROM `order` WHERE pay_order_id="${ch_id}"
+    #检查uid
+    Should Be Equal    ${OrderTuple[0][0]}    ${user_id}
+    #检查order_type
+    Should Be Equal    ${OrderTuple[0][1]}    5    #赠送的order_type是5
+    #检查amount
+    Should Be Equal    ${OrderTuple[0][2]}    ${amount}
+    #检查state
+    Should Be Equal    ${OrderTuple[0][3]}    2    #支付成功的state为2
+    ${order_id}    set variable    ${OrderTuple[0][4]}
+    [Return]    ${order_id}
+
+根据ch_id查询order_id
+    [Arguments]    ${ch_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】ch_id
+    ...
+    ...    【返回】order_id
+    ...
+    ...    【说明】根据char_id在order表中查找order_id
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM `order` WHERE pay_order_id="${ch_id}"
+    ${OrderTuple}    Query    SELECT order_id FROM `order` WHERE pay_order_id="${ch_id}"
+    ${order_id}    set variable    ${OrderTuple[0][0]}
+    [Return]    ${order_id}

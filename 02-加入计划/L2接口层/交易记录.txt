@@ -1,0 +1,16 @@
+*** Keywords ***
+校验交易记录
+    [Arguments]    ${返回的交易记录}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验交易记录展示的各字段
+    ...
+    ...    【参数】 返回的交易记录：查询接口返回的交易信息 计划：计划ID（重疾/IT安康）
+    ...
+    ...    【返回值】无
+    log    ${返回的交易记录}
+    Should Contain    ${返回的交易记录}    交易成功
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${返回的交易记录}    加入全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${返回的交易记录}    加入IT族安康互助计划
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${返回的交易记录}    -9.00    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${返回的交易记录}    -299.00

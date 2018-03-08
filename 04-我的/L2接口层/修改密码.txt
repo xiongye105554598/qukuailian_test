@@ -1,0 +1,31 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+修改密码第1步
+    [Arguments]    ${phone}    ${code}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号、验证码、校验key、校验value
+    ...
+    ...    【说明】修改密码第一步，输入手机号和验证码
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/forgetpwd    PhoneCodeForm%5Bphone%5D=${phone}&PhoneCodeForm%5Bcode%5D=${code}
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+
+修改密码第2步
+    [Arguments]    ${pwd}    ${pwd2}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】密码、重复密码、校验key、校验value
+    ...
+    ...    【说明】修改密码第二步，输入两次密码
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/account/forgetpwdstep2    pwd=${pwd}&confirmpwd=${pwd2}
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}

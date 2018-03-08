@@ -1,0 +1,35 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+校验实名认证成功insured表记录
+    [Arguments]    ${phone}    ${name}    ${idcard}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据userid查询insure表记录，并校验姓名和身份证
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM insured WHERE user_id=${user_id} AND card_no=${idcard}
+    ${NameTuple}    Query    SELECT real_name FROM insured WHERE user_id=${user_id} AND card_no=${idcard}
+    #检查姓名
+    Should Be Equal    ${name}    ${NameTuple[0][0]}
+
+校验我的保障人个数
+    [Arguments]    ${ResponseBody}    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据user_id查询用户的保障人个数
+    ${Value}    Get Json Value    ${ResponseBody}    /data
+    #解析parse
+    ${result}    Parse Json    ${Value}
+    ${len1}    Get Length    ${result}
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #查询我的保障人
+    ${insuredTuple}    Query    SELECT * FROM insured WHERE user_id=${user_id}
+    ${len2}    Get Length    ${insuredTuple}
+    Should Be Equal    ${len1}    ${len2}

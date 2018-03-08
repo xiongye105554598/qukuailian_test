@@ -1,0 +1,90 @@
+*** Settings ***
+Resource          ../L2接口层/登录.txt
+Resource          ../../资源/redis.txt
+Resource          ../L3DB层/account_phone.txt
+Resource          ../../资源/清理数据.txt
+
+*** Test Cases ***
+密码登录成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】使用密码登录成功
+    ...
+    ...    【前置条件】已注册用户
+    [Tags]    yuewang
+    \    #用户名    #密码    #验证码为空    #密码类型=1    #校验key    #校验value
+    登录    13437255701    abc@123    \    1    success    true
+
+密码错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】使用密码登录，密码错误，执行后需清除错误次数
+    ...
+    ...    【前置条件】已注册用户
+    [Tags]    yuewang
+    ${用户手机号}    set variable    13437255701
+    \    #用户名    #密码（错误的）    #验证码为空    #密码类型=1    #校验key    #校验value
+    登录    ${用户手机号}    111111    \    1    success    false
+    #检查message
+    校验Http ResponseBody    message    "密码失败1次, 失败3次后账号将被锁定30分钟"
+    #清除redis    #全局变量UserId
+    查询密码错误次数    ${用户手机号}
+    清除密码错误次数    ${用户手机号}
+    解除密码错误帐号锁定    ${用户手机号}
+
+密码登录手机号未注册
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】登录的手机号未注册
+    ...
+    ...    【前置条件】未注册用户
+    [Tags]    yuewang
+    \    #用户名（未注册）    #密码    #验证码为空    #密码类型=1    #校验key    #校验value
+    登录    23823811111    111111    \    1    success    false
+    #检查message
+    校验Http ResponseBody    message    "用户名或密码错误"
+
+已注册用户验证码登录
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】使用验证码登录成功
+    ...
+    ...    【前置条件】已注册用户
+    [Tags]    yuewang
+    ${手机号}    set variable    23899999999
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    \    #用户名    #密码为空    #验证码    #验证码类型=2    #校验key    #校验value
+    登录    ${手机号}    \    ${验证码}    2    success    true
+
+未注册用户验证码登录
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】未注册用户使用验证码登录，未该手机号注册
+    ...
+    ...    【前置条件】未注册用户
+    [Tags]    yuewang
+    ${手机号}    set variable    23899999999
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #登录    #手机号    #密码为空    #验证码    #验证码类型=2    #校验key    #校验value
+    登录    ${手机号}    \    ${验证码}    2    success    true
+    #校验数据库
+    校验用户是否注册成功    ${手机号}
+    #删除注册信息
+    清理注册信息    ${手机号}
+
+验证码错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】使用验证码登录，验证码错误，执行后需清除错误次数
+    ...
+    ...    【前置条件】已注册用户
+    [Tags]    yuewang
+    ${用户手机号}    set variable    13437255701
+    \    #用户名    #密码为空    #验证码（错误的）    #验证码类型=2    #校验key    #校验value
+    登录    ${用户手机号}    \    1111    2    success    false
+    #检查message
+    校验Http ResponseBody    message    "验证码错误，请重新输入"
+    #清除redis    #全局变量LoginPhone
+    查询验证码错误次数    ${用户手机号}
+    清除验证码错误次数    ${用户手机号}
+    解除验证码错误帐号锁定    ${用户手机号}

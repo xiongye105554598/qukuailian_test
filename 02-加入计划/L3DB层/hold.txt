@@ -1,0 +1,112 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+Resource          ../L2接口层/计划.txt
+
+*** Keywords ***
+加入成功校验持有计划信息
+    [Arguments]    ${phone}    ${InsuredId}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验加入计划成功后，hold表中的持有信息
+    ...
+    ...    【参数】 phone：用户手机号，InsuredId：保障人ID，计划：计划id
+    ...
+    ...    【返回值】 无
+    ${HoldTuple}    查询加入计划后的某保障人持有信息    ${phone}    ${InsuredId}
+    Should Be Equal As Strings    ${计划}    ${HoldTuple[0][0]}    #校验计划类型
+    Should Be Equal As Strings    0    ${HoldTuple[0][1]}    #校验计划状态
+    ${计划}    获取计划类型    ${计划}
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${HoldTuple[0][2]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    29900    ${HoldTuple[0][2]}    #校验预存保障金：9/299元
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    30000000    ${HoldTuple[0][3]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    90000000    ${HoldTuple[0][3]}    #校验最高赔付金额：30万
+
+加入失败校验持有计划信息
+    [Arguments]    ${phone}    ${InsuredId}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验加入计划失败后，hold表中没有持有信息（长度为0）
+    ...
+    ...    【参数】 phone：用户手机号，InsuredId：保障人ID，计划：计划id
+    ...
+    ...    【返回值】 无
+    ${HoldTuple}    查询加入计划后的持有信息    ${phone}
+    ${length}    Get length    ${HoldTuple}
+    log    ${length}
+    Should Be Equal As Strings    0    ${length}
+
+加入多个计划校验持有计划信息
+    [Arguments]    ${phone}    @{计划列表}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验加入多个计划后，hold表中的持有信息
+    ...
+    ...    【参数】 phone：用户手机号，InsuredId：保障人ID，计划列表：加入的计划id逆序排列
+    ...
+    ...    【返回值】 无
+    ${HoldTuple}    查询加入计划后的持有信息    ${phone}
+    ${num}    set variable    0
+    : FOR    ${计划}    IN    @{计划列表}
+    \    log    ${计划}
+    \    Should Be Equal As Strings    ${计划}    ${HoldTuple[${num}][0]}    #校验计划类型
+    \    Should Be Equal As Strings    0    ${HoldTuple[${num}][1]}    #校验计划状态
+    \    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${HoldTuple[${num}][2]}    ELSE IF
+    \    ...    "${计划}"=="itak_product"    Should Be Equal As Strings    29900    ${HoldTuple[${num}][2]}    #校验预存保障金：9/299元
+    \    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    30000000    ${HoldTuple[${num}][3]}    ELSE IF
+    \    ...    "${计划}"=="itak_product"    Should Be Equal As Strings    90000000    ${HoldTuple[${num}][3]}    #校验最高赔付金额：30万
+    \    ${num}    Evaluate    ${num}+1
+
+退出再加入成功校验持有计划信息
+    [Arguments]    ${phone}    ${InsuredId}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验退出再加入计划后，hold表中的持有信息
+    ...
+    ...    【参数】 phone：用户手机号，InsuredId：保障人ID，计划：计划id
+    ...
+    ...    【返回值】 无
+    ${HoldTuple}    查询加入计划后的某保障人持有信息    ${phone}    ${InsuredId}
+    log    ${HoldTuple}
+    #校验hold信息总条数
+    ${HoldLength}    Get length    ${HoldTuple}
+    Should Be Equal As Strings    2    ${HoldLength}
+    #获取退出计划的hold信息
+    ${outInfo}    set variable    ${HoldTuple[0]}
+    Should Be Equal As Strings    1    ${outInfo[1]}    #校验计划状态
+    Should Be Equal As Strings    0    ${outInfo[2]}    #校验预存保障金：0元
+    #获取加入计划的hold信息	\	\	\	\	\	\	\	\	\	\
+    ${inInfo}    set variable    ${HoldTuple[1]}
+    Should Be Equal As Strings    0    ${inInfo[1]}    #校验计划状态
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${inInfo[2]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    29900    ${inInfo[2]}    #校验预存保障金：9/299元
+	
+查询加入计划后的持有信息
+    [Arguments]    ${phone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 从hold表中查询出该用户该保障人的持有信息
+    ...
+    ...    【参数】 phone：用户手机号
+    ...
+    ...    【返回值】 HoldTuple：持有信息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    log    ${UserId}
+    ${HoldTuple}    Query    select \ product_id,is_out,prestore_balance, mutual_aid_money from hold where user_id=${UserId};
+    [Return]    ${HoldTuple}
+
+查询加入计划后的某保障人持有信息
+    [Arguments]    ${phone}    ${InsuredId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 从hold表中查询出该用户该保障人的持有信息
+    ...
+    ...    【参数】 phone：用户手机号
+    ...
+    ...    【返回值】 HoldTuple：持有信息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    log    ${UserId}
+    ${HoldTuple}    Query    select \ product_id,is_out,prestore_balance, mutual_aid_money from hold where user_id=${UserId} and owner=${InsuredId};
+    [Return]    ${HoldTuple}

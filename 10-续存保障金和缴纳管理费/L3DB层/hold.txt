@@ -1,0 +1,32 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+校验某用户的保障金
+    [Arguments]    ${Phone}    ${ExceptedPrestoreBalance}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 获取某用户的保障金，并校验保障金的值
+    ...
+    ...    【参数】 phone：用户手机号；ExceptedPrestoreBalance：预期预存保障金
+    ...
+    ...    【返回值】 无
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${Phone}
+    ${PrestoreBalanceTuple}    Query    select prestore_balance from hold where user_id=${UserId};
+    ${PrestoreBalance}    set variable    ${PrestoreBalanceTuple[0][0]}
+    Should Be Equal As Strings    ${ExceptedPrestoreBalance}    ${PrestoreBalance}
+
+修改管理费时间
+    [Arguments]    ${Phone}
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${Phone}
+    Execute Sql String    UPDATE hold SET protection_period="0" WHERE user_id="${UserId}";
+
+校验管理费时间
+    [Arguments]    ${Phone}    ${ExceptedProtectionPeriod}
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${Phone}
+    ${ProtectionPeriodTuple}    Query    SELECT protection_period FROM hold WHERE user_id="${UserId}";
+    ${ProtectionPeriod}    set variable    ${ProtectionPeriodTuple[0][0]}
+    Should Be Equal As Strings    ${ExceptedProtectionPeriod}    ${ProtectionPeriod}

@@ -1,0 +1,219 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/赠送支付.txt
+Resource          ../L3DB层/order.txt
+Resource          ../L3DB层/gift.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Test Cases ***
+余额支付赠送计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】余额支付赠送计划，余额必须足够，不创建订单号
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    1
+    ${赠送单价}    set variable    900
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    999999900    #余额预设足够多
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #支付方式    #赠送类型    #赠送数量    #赠送单价
+    ...    #跳转url    #校验key    #校验value
+    赠送余额支付    zjwy_product    app    wx    1    ${赠送份数}    ${赠送单价}
+    ...    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据时间校验赠送交易记录（赠送）    ${用户手机号}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    ${赠送单价}
+
+微信支付赠送计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】微信支付赠送计划（账户余额必须为0）
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    500
+    ${赠送单价}    set variable    900
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #客户端（APP）    #支付方式    #赠送类型    #赠送数量
+    ...    #赠送金额    #跳转url    #校验key    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    ${赠送单价}
+
+混合支付赠送计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】混合支付赠送计划
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    1
+    ${赠送单价}    set variable    900
+    ${账户余额}    set variable    500    #该金额需小于赠送总金额
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    ${账户余额}
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}-${账户余额}
+    获取登录态    ${用户手机号}    ${验证码}    #产品ID    #客户端（APP）    #支付方式    #赠送类型
+    ...    #赠送数量    #赠送金额    #跳转url    #校验key    ${EMPTY}    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    ${赠送单价}
+
+赠送金额为10元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送金额10元，使用微信支付
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    1
+    ${赠送单价}    set variable    1000
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    ${赠送单价}
+
+赠送金额为8元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送金额8元，使用微信支付
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    1
+    ${赠送单价}    set variable    800
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    ${赠送单价}
+
+赠送金额为0元
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送金额0元，使用微信支付，Server会自动将金额设为9元（产品的起购金额）
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    3
+    ${赠送单价}    set variable    0
+    ${支付金额}    Evaluate    ${赠送份数}*900
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #余额支付    赠送方法    #产品ID    #客户端（APP）
+    ...    #支付方式    #赠送类型    #赠送数量    #赠送金额    #跳转url    #校验key
+    ...    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    ${赠送份数}    900
+
+赠送份数为0份
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送份数0份，使用微信支付，Server会自动将份数设为1份
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    0
+    ${赠送单价}    set variable    600
+    ${支付金额}    Evaluate    1*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #微信支付    赠送方法    #产品ID    #客户端（APP）
+    ...    #支付方式    #赠送类型    #赠送数量    #赠送金额    #跳转url    #校验key
+    ...    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    true
+    #校验交易记录
+    ${order_id}    根据ch_id校验赠送交易记录（赠送）    ${ch_id}    ${用户手机号}    ${支付金额}
+    #校验gift
+    根据order_id校验gift（赠送）    ${order_id}    ${用户手机号}    1    ${赠送单价}
+
+赠送金额为负数
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送金额为负数，报错，使用微信支付
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    1
+    ${赠送单价}    set variable    -800
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #微信支付    赠送方法    #产品ID    #客户端（APP）
+    ...    #支付方式    #赠送类型    #赠送数量    #赠送金额    #跳转url    #校验key
+    ...    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    false
+    #校验message
+    校验Http ResponseBody    message    "赠送金额不正确"
+
+赠送份数为负数
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送份数为负数，使用微信支付，报错
+    ...
+    ...    【前提】已注册
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23837255712
+    ${验证码}    根据手机号生成验证码    ${用户手机号}
+    ${赠送份数}    set variable    -3
+    ${赠送单价}    set variable    900
+    ${支付金额}    Evaluate    ${赠送份数}*${赠送单价}
+    #赠送前预设账户余额
+    设置账户余额    ${用户手机号}    0    #余额预设为0
+    #登录获取Cookie
+    获取登录态    ${用户手机号}    ${验证码}    #客户端（APP）    #支付方式    #赠送类型    #赠送数量
+    ...    #赠送金额    #跳转url    #校验key    #校验value
+    ${ch_id}    赠送微信支付    zjwy_product    app    wx    1    ${赠送份数}
+    ...    ${赠送单价}    /payment/payresult?product_id=zjwy_product&order_type=5    success    false
+    #校验message
+    校验Http ResponseBody    message    "赠送数量不正确"

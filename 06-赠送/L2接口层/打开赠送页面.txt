@@ -1,0 +1,10 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+打开赠送页面
+    [Arguments]    ${gift_id}    ${token}
+    #设置Http域名和header
+    设置Http域名和不带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /present/presentdetail?gift_id=${gift_id}&token=${token}

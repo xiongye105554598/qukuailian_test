@@ -1,0 +1,64 @@
+*** Settings ***
+Resource          ../../资源/字符串处理.txt
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/登录.txt
+
+*** Keywords ***
+获取赠送页csrf值
+    [Arguments]    ${gift_id}    ${token}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【作用】 打开赠送链接页，获取页面返回的csrf值
+    ...
+    ...    【参数】 赠送的gift_id和token
+    设置Http域名
+    发送GET请求    /present/presentdetail?gift_id=${gift_id}&token=${token}
+    #获取Body中csrf值
+    ${ResponseBody}    Get Response Body
+    ${csrf}    获取body的csrf值    ${ResponseBody}
+    [Return]    ${csrf}
+
+获取body的csrf值
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【作用】<input type="hidden" name="_csrf" value="Q3ZIYkhyLk0MLgMALwBXKjkaIVAORnsXdhghJiwzTBQ2FyswMUZBPA==">从这个串中获取csrf值
+    ...
+    ...    【参数】 ResponseBody：赠送页面返回的Body
+    ...
+    ...    【返回值】csrf值
+    ${CsrfTokenString}    Fetch From Right    ${ResponseBody}    _csrf
+    log    ${CsrfTokenString}
+    ${CsrfTokenTuple}    Split String    ${CsrfTokenString}    "
+    log    ${CsrfTokenTuple[2]}
+    [Return]    ${CsrfTokenTuple[2]}
+
+获取控制台赠送页token值
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【作用】 控制台打开赠送链接页，获取页面返回的token值
+    ...
+    ...    【参数】 赠送的gift_id和token
+    设置Http域名
+    获取登录态    ${consolePhone}    ${consoleCode}
+    发送GET请求    /admin/gift/create
+    #获取Body中token值
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    ${token}    获取body的token值    ${ResponseBody}
+    [Return]    ${token}
+
+获取body的token值
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【作用】<input type="hidden" id="opgift-token" class="form-control" name="OpGift[token]" value="GJtWL0Z6Tltk4rdEXA4DEp6mh1m8hBBQ">从这个串中获取token值
+    ...
+    ...    【参数】 ResponseBody：赠送页面返回的Body
+    ...
+    ...    【返回值】token
+    ${TokenString}    Fetch From Right    ${ResponseBody}    OpGift[token]
+    log    ${TokenString}
+    ${TokenTuple}    Split String    ${TokenString}    "
+    log    ${TokenTuple[2]}
+    [Return]    ${TokenTuple[2]}

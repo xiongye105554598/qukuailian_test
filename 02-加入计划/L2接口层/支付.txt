@@ -1,0 +1,36 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/支付.txt
+
+*** Keywords ***
+不满足加入条件余额支付
+    [Arguments]    ${product_id}    ${insured_id}    ${errorMessage}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 使用余额支付，但年龄不符合要求
+    ...
+    ...    【参数】 product_id：计划类型、insured_id：保障人ID
+    ...
+    ...    【返回值】无
+    #发送请求和校验返回
+    通用支付    ${product_id}    ${insured_id}    wx    app
+    校验Http返回码和ResponseBody    200    success    false
+    ${ResponseBody}    Get Response Body
+    ${错误信息}    Get Json Value    ${ResponseBody}    /message
+    Should Be Equal As Strings    ${errorMessage}    ${错误信息}
+
+不满足加入条件微信支付
+    [Arguments]    ${product_id}    ${insured_id}    ${errorMessage}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 使用微信支付，但年龄不符合要求
+    ...
+    ...    【参数】 product_id：计划类型、insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用支付    ${product_id}    ${insured_id}    wx_wap    mobile
+    校验Http返回码和ResponseBody    200    success    false
+    ${ResponseBody}    Get Response Body
+    ${错误信息}    Get Json Value    ${ResponseBody}    /message
+    Should Be Equal As Strings    ${errorMessage}    ${错误信息}

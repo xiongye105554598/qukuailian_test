@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          ../../资源/清理数据.txt
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/生成礼包.txt
+
+*** Test Cases ***
+加入重疾获取大礼包
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】就是加入计划的接口，校验加入重疾是否有大礼包
+    ...
+    ...    【前提】用户已注册、未加入重疾无忧
+    [Tags]    yuewang
+    ${用户手机号}    set variable    23854290001
+    ${产品id}    set variable    zjwy_product
+    ${保障人姓名}    set variable    大礼包
+    ${保障人身份证号}    set variable    360101198801012045
+    #登录获取Cookie    #手机号    #验证码
+    获取登录态    ${用户手机号}    1204
+    #加入计划获取大礼包
+    ${gift_id}    ${token}    生成礼包返回gift_id和token    ${用户手机号}    ${产品id}    ${保障人姓名}    ${保障人身份证号}
+    [Teardown]    清理已加入的用户    ${用户手机号}    ${保障人身份证号}    0

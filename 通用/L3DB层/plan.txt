@@ -1,0 +1,45 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+校验计划状态
+    [Arguments]    ${plan_id}    ${state}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验计划当前状态
+    ...
+    ...    【参数】 plan_id：计划id、state：预期的状态 筹备期：1，成长期：2，运行期：3，休眠期：4，已解散：5
+    ...
+    ...    【返回值】 无
+    连接数据库
+    ${StateTuple}    Query    SELECT state FROM plan WHERE id="${plan_id}";
+    Should Be Equal As Strings    ${state}    ${StateTuple[0][0]}
+
+校验添加的计划是否存在
+    [Arguments]    ${plan_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验计划的存在性，存在则断言成功，不存在则断言失败
+    ...
+    ...    【参数】 plan_id
+    ...
+    ...    【返回值】 无
+    连接数据库
+    ${PlanTuple}    Query    SELECT * FROM plan WHERE id="${plan_id}";
+    ${length}    Get length    ${PlanTuple}
+    Should Be Equal As Strings    1    ${length}
+
+修改计划状态更新时间
+    [Arguments]    ${planId}    ${time}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 将plan表中state_update_time更新为${time}之前
+    ...
+    ...    【参数】 planId：计划ID
+    ...
+    ...    【返回值】无
+    连接数据库
+    ${TimeStamp}    Get Time    epoch
+    ${180agoTimeStamp}    Evaluate    ${TimeStamp}-${time}
+    log    ${180agoTimeStamp}
+    Execute Sql String    UPDATE plan SET state_update_time=${180agoTimeStamp} WHERE id="${planId}";

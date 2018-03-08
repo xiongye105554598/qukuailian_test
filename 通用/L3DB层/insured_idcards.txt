@@ -1,0 +1,17 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+校验身份证号是否存在
+    [Arguments]    ${cardNo}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验身份证号是否存在
+    ...
+    ...    【参数】 cardNo：身份证号
+    ...
+    ...    【返回值】 存在，返回大于0；不存在，返回0
+    连接数据库
+    ${IDCardTupleTuple}    Query    SELECT * FROM `insured_idcards` WHERE card_no="${cardNo}";
+    ${length}    Get length    ${IDCardTupleTuple}
+    [Return]    ${length}

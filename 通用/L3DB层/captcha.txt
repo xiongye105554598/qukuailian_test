@@ -1,0 +1,18 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          account_phone.txt
+
+*** Keywords ***
+查询最新一条可用的验证码
+    [Arguments]    ${phone}
+    [Documentation]    【作者】 yuewang
+    ...
+    ...    【作用】 根据手机号查询最新一条可用的验证码state=0
+    ...
+    ...    【参数】 手机号
+    ...
+    ...    【返回值】验证码
+    ${UserId}    根据手机号查UserId    ${phone}
+    连接数据库
+    ${CodeTuple}    Query    SELECT code FROM captcha WHERE identity=${phone} ORDER BY create_time DESC
+    [Return]    ${CodeTuple[0][0]}

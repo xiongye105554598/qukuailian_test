@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          ../../01-登录注册/L2接口层/注册.txt
+Resource          ../../01-登录注册/L3DB层/account_phone.txt
+Resource          ../../资源/清理数据.txt
+
+*** Test Cases ***
+注册不清理
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】快速注册
+    [Tags]    yuewang
+    ${手机号}    set variable    23823899999
+    ${验证码}    根据手机号生成验证码    ${手机号}
+    #注册前先清理注册信息
+    ${user_id}    根据手机号查UserId    ${手机号}
+    Run Keyword If    "${user_id}" != "${EMPTY}"    清理注册信息    ${手机号}    #注册    #手机号    #验证码
+    ...    #密码    #重复密码    #勾选协议    #校验key    #校验value
+    注册    ${手机号}    ${验证码}    abc@123    abc@123    on    success
+    ...    true
+    #校验数据库
+    校验用户是否注册成功    ${手机号}
+    [Teardown]

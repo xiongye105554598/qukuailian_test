@@ -1,0 +1,63 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/支付.txt
+Resource          ../L3DB层/gift.txt
+Resource          ../L3DB层/order.txt
+
+*** Keywords ***
+赠送余额支付
+    [Arguments]    ${product_id}    ${client}    ${pay_way}    ${ext_type}    ${ext_quantity}    ${ext_price}
+    ...    ${redirect_url}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送余额支付接口
+    ...
+    ...    【参数】产品、客户端、支付方式、类型、赠送数量、赠送单价、跳转链接
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/order/pay    product_id=zjwy_product&order_type=5&client=${client}&ext%5Btype%5D=${ext_type}&redirect_url=${redirect_url}&ext%5Bquantity%5D=${ext_quantity}&ext%5Bprice%5D=${ext_price}&pay-way=${pay_way}    #赠送的order_type是5
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+
+赠送微信支付
+    [Arguments]    ${product_id}    ${client}    ${pay_way}    ${ext_type}    ${ext_quantity}    ${ext_price}
+    ...    ${redirect_url}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】赠送微信支付接口
+    ...
+    ...    【ordertype】赠送的type=5
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/order/pay    product_id=zjwy_product&order_type=5&client=${client}&ext%5Btype%5D=${ext_type}&redirect_url=${redirect_url}&ext%5Bquantity%5D=${ext_quantity}&ext%5Bprice%5D=${ext_price}&pay-way=${pay_way}    #赠送的order_type是5
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    ${Value}    Get Json Value    ${ResponseBody}    /${key}
+    #赠送请求成功，再调Ping++
+    ${ch_id}    Run Keyword If    "${Value}"=="true"    微信Ping++支付    ${ResponseBody}
+    [Return]    ${ch_id}
+
+新建赠送返回gift_id和token
+    [Arguments]    ${product_id}    ${client}    ${pay_way}    ${ext_type}    ${ext_quantity}    ${ext_price}
+    ...    ${redirect_url}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】新建一个赠送，返回gift id和token
+    ...
+    ...    【ordertype】赠送的type=5
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/order/pay    product_id=zjwy_product&order_type=5&client=${client}&ext%5Btype%5D=${ext_type}&redirect_url=${redirect_url}&ext%5Bquantity%5D=${ext_quantity}&ext%5Bprice%5D=${ext_price}&pay-way=${pay_way}    #赠送的order_type是5
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    ${Value}    Get Json Value    ${ResponseBody}    /${key}
+    #赠送请求成功，再调Ping++
+    ${ch_id}    Run Keyword If    "${Value}"=="true"    微信Ping++支付    ${ResponseBody}
+    ${order_id}    根据ch_id查询order_id    ${ch_id}
+    ${gift_id}    ${token}    根据order_id查询gift_id和token    ${order_id}
+    [Return]    ${gift_id}    ${token}

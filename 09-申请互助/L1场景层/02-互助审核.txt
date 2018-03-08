@@ -1,0 +1,67 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/计划.txt
+Resource          ../L2接口层/申请互助审核.txt
+Resource          ../L3DB层/claim_info.txt
+Resource          ../L3DB层/claim_task.txt
+
+*** Test Cases ***
+申请互助成功
+    [Documentation]    【前置条件】
+    ...
+    ...    1）提前新增计划zjwy_product-0510
+    ...
+    ...    2）用户23810000510增加6个保障人，并加入该计划，使计划进入成长期
+    ...
+    ...    3）让保障人申三（110101198810208334）申请互助，该保障人的hold_id=zjwy_product-0510_145692_11523_20161105143623
+    ...
+    ...
+    ...    【步骤】
+    ...
+    ...    1）根据holdId查询claimId（申请互助Id号）
+    ...
+    ...    2）查询申请前claimTask中的记录
+    ...
+    ...    3）调用申请互助审核成功接口
+    ...
+    ...    4）再次查询申请后claimTask中的记录
+    ...
+    ...    5）校验4）-2）中的值是否为1条记录
+    [Tags]    wsong
+    ${ClaimId}    根据holdId查询ClaimId    zjwy_product-0510_145692_11523_20161105143623
+    ${beforeLen}    校验申请互助审核任务    ${ClaimId}
+    ${expectLen}    Evaluate    ${beforeLen}+1
+    #调用审核成功接口
+    申请互助审核成功    ${ClaimId}
+    #校验DB信息，新增1条任务
+    ${afterLen}    校验申请互助审核任务    ${ClaimId}
+    Should Be Equal As Integers    ${expectLen}    ${afterLen}
+
+申请互助失败
+    [Documentation]    【前置条件】
+    ...
+    ...    1）提前新增计划zjwy_product-0510
+    ...
+    ...    2）用户23810000510增加6个保障人，并加入该计划，使计划进入成长期
+    ...
+    ...    3）让保障人申四（11010119881020785X）申请互助，该保障人的hold_id=zjwy_product-0510_145692_11524_20161105143640
+    ...
+    ...    【步骤】
+    ...
+    ...    1）根据holdId查询claimId（申请互助Id号）
+    ...
+    ...    2）查询申请前claimTask中的记录
+    ...
+    ...    3）调用申请互助审核失败接口
+    ...
+    ...    4）再次查询申请后claimTask中的记录
+    ...
+    ...    5）校验4）-2）中的值是否为1条记录
+    [Tags]    wsong
+    ${ClaimId}    根据holdId查询ClaimId    zjwy_product-0510_145692_11524_20161105143640
+    ${beforeLen}    校验申请互助审核任务    ${ClaimId}
+    ${expectLen}    Evaluate    ${beforeLen}+1
+    #调用审核失败接口
+    申请互助审核失败    ${ClaimId}
+    #校验DB信息，新增1条任务
+    ${afterLen}    校验申请互助审核任务    ${ClaimId}
+    Should Be Equal As Integers    ${expectLen}    ${afterLen}

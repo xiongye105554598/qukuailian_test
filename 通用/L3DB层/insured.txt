@@ -1,0 +1,19 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          account_phone.txt
+
+*** Keywords ***
+根据身份证号查保障人ID
+    [Arguments]    ${cardNo}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 根据身份证号查询保障人ID
+    ...
+    ...    【参数】 cardNo：身份证号
+    ...
+    ...    【返回值】 InsuredId：保障人ID
+    连接数据库
+    ${InsuredIdTuple}    Query    SELECT card_id FROM `insured_idcards` WHERE card_no="${cardNo}";
+    ${InsuredId}    set variable    ${InsuredIdTuple[0][0]}
+    log    ${InsuredId}
+    [Return]    ${InsuredId}

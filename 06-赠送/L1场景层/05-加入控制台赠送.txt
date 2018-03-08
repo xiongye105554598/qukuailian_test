@@ -1,0 +1,273 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L2接口层/加入赠送计划.txt
+Resource          ../../通用/L2接口层/保障人.txt
+Resource          ../L3DB层/account_gift.txt
+Resource          ../../资源/清理数据.txt
+Resource          ../L3DB层/insured.txt
+Resource          ../L3DB层/hold.txt
+Resource          ../L2接口层/控制台赠送.txt
+Resource          ../L2接口层/获取csrf和token.txt
+
+*** Test Cases ***
+加入控制台赠送计划成功
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划。领取成功，加入成功！
+    ...
+    ...    【前提】手机号未注册
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    true
+    #校验领取
+    校验领取成功的account_gift    ${手机号}    ${赠送id}    2    #已加入state=2
+    #校验保障人
+    ${保障人id}    校验保障人是否存在    ${手机号}    ${保障人身份证}
+    #校验hold
+    校验加入成功的hold带渠道    ${手机号}    ${赠送id}    ${产品id}    ${保障人id}    ${赠送单价}    ${赠送渠道}
+    #清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+
+加入控制台赠送手机号错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，验证码错误。领取失败
+    ...
+    ...    【前提】手机号格式错误
+    [Tags]    yuewang
+    ${手机号}    set variable    13466660004444
+    ${验证码}    set variable    1346
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "手机号码格式不正确"
+
+加入控制台赠送验证码错误
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，验证码错误。领取失败
+    ...
+    ...    【前提】手机号未注册 | 已注册但未加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    1333
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "验证码错误，请重新输入"
+    #校验account_gift
+    校验领取不成功的account_gift    ${手机号}    ${赠送id}
+    #清理redis
+    查询验证码错误次数    ${手机号}
+    清除验证码错误次数    ${手机号}
+    解除验证码错误帐号锁定    ${手机号}
+    #清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+
+加入控制台赠送保障人姓名为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，保障人姓名为空。领取成功，加入失败！
+    ...
+    ...    【前提】手机号未注册 | 已注册但未加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    \    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "姓名不能为空"
+    #校验account_gift
+    校验领取成功的account_gift    ${手机号}    ${赠送id}    1    #领取成功加入失败
+    #校验hold
+    校验加入不成功的hold    ${手机号}    ${赠送id}
+    #清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+
+加入控制台赠送保障人身份证为空
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，身份证为空。领取成功，加入失败！
+    ...
+    ...    【前提】手机号未注册 | 已注册但未加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    \    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "请输入有效的身份证号"
+    #校验account_gift
+    校验领取成功的account_gift    ${手机号}    ${赠送id}    1    #领取成功加入失败
+    #校验hold
+    校验加入不成功的hold    ${手机号}    ${赠送id}
+    #清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+
+加入控制台赠送领取人已加入计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，保障人已加入该计划，领取失败
+    ...
+    ...    【前提】手机号已注册已加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    13437255701
+    ${验证码}    set variable    1343
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "你已加入该计划，不能领取了哦！"
+    #校验account_gift
+    校验领取不成功的account_gift    ${手机号}    ${赠送id}
+
+加入控制台赠送保障人已加入计划
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，保障人已加入计划。领取成功，加入失败！
+    ...
+    ...    【前提】手机号已注册未加入计划，保障人已加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    王老大
+    ${保障人身份证}    set variable    511381199002210287
+    ${产品id}    set variable    zjwy_product
+    ${赠送单价}    set variable    900
+    ${赠送份数}    set variable    10
+    ${赠送渠道}    set variable    wy_test
+    #控制台新建赠送
+    ${赠送id}    ${赠送token}    控制台赠送计划    wangyue    ${赠送渠道}    ${赠送单价}    ${赠送份数}
+    ...    ${产品id}    success    true
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "保障人已经加入该计划"
+    #校验account_gift
+    校验领取成功的account_gift    ${手机号}    ${赠送id}    1    #领取成功加入失败
+    #校验hold
+    校验加入不成功的hold    ${手机号}    ${赠送id}
+    #清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+
+加入控制台赠送已领完
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，赠送已抢完，领取失败
+    ...
+    ...    【前提】手机号未注册 | 已注册但未加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送id}    set variable    2756
+    ${赠送token}    set variable    OYUfvk2O5X3WM_dbvKKCJ7n0rFJZs1Qw
+    #使赠送不过期
+    延长赠送不过期    ${赠送id}
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "赠送已被抢完"
+    #校验account_gift
+    校验领取不成功的account_gift    ${手机号}    ${赠送id}
+
+加入控制台赠送已过期
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】加入控制台赠送计划，赠送已抢完，领取失败
+    ...
+    ...    【前提】手机号未注册 | 已注册但未加入计划
+    [Tags]    yuewang
+    ${手机号}    set variable    23866660004
+    ${验证码}    set variable    4606
+    ${保障人姓名}    set variable    你开
+    ${保障人身份证}    set variable    340101198501011573
+    ${产品id}    set variable    zjwy_product
+    ${赠送id}    set variable    2755
+    ${赠送token}    set variable    WqKfXNS5xPICMbdnNFOcaIG91sNsFgsk
+    #加入前清理数据
+    清理赠送加入数据    ${手机号}    ${产品id}    ${赠送id}
+    #加入赠送
+    加入控制台赠送计划    ${手机号}    ${验证码}    ${保障人姓名}    ${保障人身份证}    ${赠送id}    ${赠送token}
+    ...    ${产品id}    web    wechat    /pc/personal/myplan    success    false
+    #检查message
+    校验Http ResponseBody    message    "赠送已过期"
+    #校验account_gift
+    校验领取不成功的account_gift    ${手机号}    ${赠送id}

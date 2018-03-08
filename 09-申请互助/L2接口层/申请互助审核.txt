@@ -1,0 +1,37 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+
+*** Keywords ***
+申请互助审核失败
+    [Arguments]    ${claimId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用申请互助审核失败接口
+    ...
+    ...    【参数】 claimId：申请互助的唯一标识
+    ...
+    ...    【返回值】无
+    #设置域名和头
+    ${csrfBody}    设置控制台域名和带登录态的头
+    #发送请求
+    发送POST请求    /admin/claim/failed?claim_id=${claimId}    _csrf=${csrfBody}
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+
+申请互助审核成功
+    [Arguments]    ${claimId}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用申请互助审核成功接口
+    ...
+    ...    【参数】 claimId：申请互助的唯一标识
+    ...
+    ...    【返回值】无
+    #设置域名和头
+    ${csrfBody}    设置控制台域名和带登录态的头
+    #发送请求
+    发送POST请求    /admin/claim/succeed?claim_id=${claimId}    _csrf=${csrfBody}
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}

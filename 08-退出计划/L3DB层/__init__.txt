@@ -1,0 +1,2 @@
+*** Settings ***
+Resource          ../../加入计划/L3DB层/order.txt

@@ -1,0 +1,177 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+Resource          hold.txt
+
+*** Keywords ***
+校验余额加入计划的交易记录
+    [Arguments]    ${phone}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验余额加入计划的交易记录，包含两条记录
+    ...
+    ...    【参数】 phone：用户手机号，计划：计划Id
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    log    ${OrderTuple}
+    ${计划}    获取计划类型    ${计划}
+    log    ${OrderTuple[0]}
+    log    ${OrderTuple[1]}
+    #两条记录可能生成时间相同    #导致数据顺序具有不确定性
+    Run keyword IF    "${OrderTuple[0][0]}"=="wx"    校验余额支付交易记录    ${OrderTuple[0]}    ${OrderTuple[1]}    ${计划}    ELSE
+    ...    校验余额支付交易记录    ${OrderTuple[1]}    ${OrderTuple[0]}    ${计划}
+
+校验微信加入计划的交易记录
+    [Arguments]    ${phone}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验微信加入计划的交易记录，只有一条记录
+    ...
+    ...    【参数】 phone：用户手机号，计划：计划Id
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    ${计划}    获取计划类型    ${计划}
+    #校验第一条记录
+    Should Be Equal As Strings    wx_wap    ${OrderTuple[0][0]}    #校验支付方式
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${OrderTuple[0][1]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    29900    ${OrderTuple[0][1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${OrderTuple[0][2]}    加入全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${OrderTuple[0][2]}    加入IT族安康互助计划    #校验标题
+
+校验混合加入计划的交易记录
+    [Arguments]    ${phone}    ${计划}    ${balance}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验混合支付加入计划的交易记录，包含两条记录
+    ...
+    ...    【参数】 phone：用户手机号，计划：计划Id，balance：用户余额
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    ${计划}    获取计划类型    ${计划}
+    #校验第一条：余额付费
+    Should Be Equal As Strings    0    ${OrderTuple[0][0]}    #校验支付方式
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    ${balance}    ${OrderTuple[0][1]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    ${balance}    ${OrderTuple[0][1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    加入全民重疾无忧互助计划    ${OrderTuple[0][2]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    加入IT族安康互助计划    ${OrderTuple[0][2]}    #校验标题
+    #校验第二条：微信付费
+    Should Be Equal As Strings    wx_wap    ${OrderTuple[1][0]}    #校验支付方式
+    ${应付金额}    Run Keyword IF    "${计划}"=="zjwy_product"    Evaluate    900-${balance}    ELSE IF    "${计划}"=="itak_product"
+    ...    Evaluate    29900-${balance}
+    log    ${应付金额}
+    Should Be Equal As Strings    ${应付金额}    ${OrderTuple[1][1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    加入全民重疾无忧互助计划    ${OrderTuple[1][2]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    加入IT族安康互助计划    ${OrderTuple[1][2]}    #校验标题
+
+校验加入失败的交易记录
+    [Arguments]    ${phone}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验加入失败的交易记录，交易记录0条
+    ...
+    ...    【参数】 phone：用户手机号，计划：计划Id
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    ${length}    Get length    ${OrderTuple}
+    log    ${length}
+    Should Be Equal As Strings    0    ${length}
+
+校验多条微信加入计划的交易记录
+    [Arguments]    ${phone}    @{计划列表}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验多条加入计划的交易记录
+    ...
+    ...    【参数】 phone：用户手机号，计划列表：加入的计划id逆序排列
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    ${num}    set variable    0
+    : FOR    ${计划}    IN    @{计划列表}
+    \    ${计划}    获取计划类型    ${计划}
+    \    Should Be Equal As Strings    wx_wap    ${OrderTuple[${num}][0]}    #校验支付方式
+    \    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${OrderTuple[${num}][1]}    ELSE IF
+    \    ...    "${计划}"=="itak_product"    Should Be Equal As Strings    29900    ${OrderTuple[${num}][1]}    #校验金额
+    \    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    加入全民重疾无忧互助计划    ${OrderTuple[${num}][2]}    ELSE IF
+    \    ...    "${计划}"=="itak_product"    Should Be Equal As Strings    加入IT族安康互助计划    ${OrderTuple[${num}][2]}    #校验标题
+    \    ${num}    Evaluate    ${num}+1
+
+校验有管理费微信加入计划的交易记录
+    [Arguments]    ${phone}    ${计划}    ${管理费}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验有管理费使用微信加入计划的交易记录，只有一条记录
+    ...
+    ...    【参数】 phone：用户手机号，计划：计划Id，管理费：需要交纳的管理费
+    ...
+    ...    【返回值】 无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    ${计划}    获取计划类型    ${计划}
+    log    ${OrderTuple}
+    #校验第一条记录
+    Should Be Equal As Strings    wx_wap    ${OrderTuple[0][0]}    #校验支付方式
+    ${实付金额}    Run Keyword IF    "${计划}"=="zjwy_product"    Evaluate    900+${管理费}    ELSE IF    "${计划}"=="itak_product"
+    ...    Evaluate    29900+${管理费}
+    Should Be Equal As Strings    ${实付金额}    ${OrderTuple[0][1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${OrderTuple[0][2]}    加入全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${OrderTuple[0][2]}    加入IT族安康互助计划    #校验标题
+
+查询加入计划的交易记录
+    [Arguments]    ${phone}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 从order表中按照创建时间倒序查出用户的交易记录
+    ...
+    ...    【参数】 phone：用户手机号
+    ...
+    ...    【返回值】 OrderTuple：交易信息
+    连接数据库
+    ${UserId}    根据手机号查UserId    ${phone}
+    ${OrderTuple}    Query    SELECT channel,amount,title \ FROM `order` WHERE uid=${UserId} and state="2" ORDER BY added_id DESC;
+    [Return]    ${OrderTuple}
+
+校验余额支付中微信付费记录
+    [Arguments]    ${OrderTuple}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验余额加入计划的交易记录中的微信付费记录（金额为0）
+    ...
+    ...    【参数】 OrderTuple：DB中的微信付费记录；计划：计划ID
+    ...
+    ...    【返回值】 无
+    log    ${OrderTuple}
+    Should Be Equal As Strings    wx    ${OrderTuple[0]}    #校验支付方式
+    Should Be Equal As Strings    0    ${OrderTuple[1]}    #校验金额，金额为0
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${OrderTuple[2]}    加入全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${OrderTuple[2]}    加入IT族安康互助计划    #校验标题
+
+校验余额支付中余额付费记录
+    [Arguments]    ${OrderTuple}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验余额加入计划的交易记录中的余额付费记录
+    ...
+    ...    【参数】 OrderTuple：DB中的余额付费记录；计划：计划ID
+    ...
+    ...    【返回值】 无
+    Should Be Equal As Strings    0    ${OrderTuple[0]}    #校验支付方式
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    900    ${OrderTuple[1]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    29900    ${OrderTuple[1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${OrderTuple[2]}    加入全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${OrderTuple[2]}    加入IT族安康互助计划    #校验标题
+
+校验余额支付交易记录
+    [Arguments]    ${Order1}    ${Order2}    ${计划}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 校验余额加入计划的交易记录，包含两条记录
+    ...
+    ...    【参数】 Order1：微信付费记录；Order2：余额付费记录；计划：计划ID
+    ...
+    ...    【返回值】 无
+    校验余额支付中微信付费记录    ${Order1}    ${计划}
+    校验余额支付中余额付费记录    ${Order2}    ${计划}

@@ -1,0 +1,20 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+查询交易记录
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 查询交易记录信息
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】 ResponseBody：返回的交易记录信息
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /myplan/dealrecord
+    校验Http返回码    200
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    [Return]    ${ResponseBody}

@@ -1,0 +1,34 @@
+*** Settings ***
+Resource          ../../通用/L2接口层/登录.txt
+Resource          ../L3DB层/hold.txt
+
+*** Keywords ***
+控制台退出计划
+    [Arguments]    ${hold_id}    ${reason}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用控制台接口退出计划
+    ...
+    ...    【参数】 hold_id：hold表中该用户加入计划的唯一标识；reason：退出原因
+    ...
+    ...    【返回值】无
+    #设置域名和头
+    设置控制台域名和带登录态的头
+    #发送请求和校验返回
+    log    ${hold_id}
+    发送GET请求    /admin/ajax/ajax/quit-plan?hold_id=${hold_id}&reason=${reason}
+
+控制台查看退出记录
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 调用控制台接口退出计划
+    ...
+    ...    【参数】 hold_id：hold表中该用户加入计划的唯一标识；reason：退出原因
+    ...
+    ...    【返回值】无
+    #设置域名和头
+    设置控制台域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /admin/hold-out/index
+    ${responseBody}    Get Response Body
+    log    ${responseBody}

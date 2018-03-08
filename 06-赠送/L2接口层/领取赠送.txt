@@ -1,0 +1,56 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          获取csrf和token.txt
+
+*** Keywords ***
+领取赠送
+    [Arguments]    ${gift_id}    ${token}    ${phone}    ${code}    ${tips}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id（链接自带），token（链接自带），csrf，领取手机号、验证码、校验key、校验value
+    ...
+    ...    【说明】用户输入手机号和验证码，领取赠送。gift_id和token是赠送链接自带的，需要是有效的
+    #获取csrf值
+    ${csrf}    获取赠送页csrf值    ${gift_id}    ${token}
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送充值请求
+    发送POST请求    /present/presentdetail?gift_id=${gift_id}&token=${token}    _csrf=${csrf}&phone=${phone}&code=${code}
+    #校验返回码
+    校验Http返回码    200
+    #校验页面提示文案
+    校验ResponseBody是否包含    ${tips}
+
+领取赠送302
+    [Arguments]    ${gift_id}    ${token}    ${phone}    ${code}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id（链接自带），token（链接自带），csrf，领取手机号、验证码、校验key、校验value
+    ...
+    ...    【说明】如果是赠送者本人领取，返回码是302，该方法适用于赠送者本人领取
+    #获取csrf值
+    ${csrf}    获取赠送页csrf值    ${gift_id}    ${token}
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送充值请求
+    发送POST请求    /present/presentdetail?gift_id=${gift_id}&token=${token}    _csrf=${csrf}&phone=${phone}&code=${code}
+    #校验返回码
+    校验Http返回码    302 Found
+
+领取赠送不登录
+    [Arguments]    ${gift_id}    ${token}    ${phone}    ${code}    ${tips}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id（链接自带），token（链接自带），csrf，领取手机号、验证码、校验key、校验value
+    ...
+    ...    【说明】这是不登陆状态下领取赠送的方法，适用于验证码错误领取赠送
+    #获取csrf值
+    ${csrf}    获取赠送页csrf值    ${gift_id}    ${token}
+    #设置Http域名和header
+    设置Http域名和不带登录态的头
+    #发送请求
+    发送POST请求    /present/presentdetail?gift_id=${gift_id}&token=${token}    _csrf=${csrf}&phone=${phone}&code=${code}
+    #校验返回码
+    校验Http返回码    200
+    #校验页面提示文案
+    校验ResponseBody是否包含    ${tips}

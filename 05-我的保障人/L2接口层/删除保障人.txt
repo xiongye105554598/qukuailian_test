@@ -1,0 +1,57 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+删除保障人
+    [Arguments]    ${insured_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 删除保障人
+    ...
+    ...    【参数】 insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送POST请求    /ajax/account/delinsured    insured_id=${insured_id}
+
+删除保障人成功
+    [Arguments]    ${insured_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 删除保障人成功
+    ...
+    ...    【参数】 insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    删除保障人    ${insured_id}
+    校验Http返回码和ResponseBody    200    success    true
+
+删除保障人失败
+    [Arguments]    ${insured_id}    ${errorMessage}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 保障人已持有计划，删除保障人失败
+    ...
+    ...    【参数】 insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    删除保障人    ${insured_id}
+    校验Http返回码和ResponseBody    200    success    false
+    ${ResponseBody}    Get Response Body
+    ${message}    Get Json Value    ${ResponseBody}    /message
+    Should Be Equal As Strings    ${errorMessage}    ${message}
+
+校验保障人删除后的保障人信息
+    [Arguments]    ${保障人信息}
+    [Documentation]    【作者】 wsong
+    ...
+    ...    【作用】 删除保障人后，校验查询保障人接口返回的data字段值是否为null
+    ...
+    ...    【参数】 保障人信息：查询保障人接口返回的响应
+    ...
+    ...    【返回值】 无
+    log    ${保障人信息}
+    ${保障人数据}    Get Json Value    ${保障人信息}    /data
+    Should Be Equal As Strings    null    ${保障人数据}

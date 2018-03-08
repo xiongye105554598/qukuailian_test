@@ -1,0 +1,20 @@
+*** Settings ***
+Resource          ../../02-加入计划/L3DB层/order.txt
+
+*** Keywords ***
+校验退出计划的交易记录
+    [Arguments]    ${phone}    ${计划}    ${amount}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 退出计划后，校验交易记录
+    ...
+    ...    【参数】 phone：用户手机号；计划：计划ID；amount：实际退出金额
+    ...
+    ...    【返回值】无
+    ${OrderTuple}    查询加入计划的交易记录    ${phone}
+    #校验第一条记录
+    Should Be Equal As Strings    0    ${OrderTuple[0][0]}    #校验支付方式
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Be Equal As Strings    -${amount}    ${OrderTuple[0][1]}    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Be Equal As Strings    -${amount}    ${OrderTuple[0][1]}    #校验金额
+    Run Keyword IF    "${计划}"=="zjwy_product"    Should Contain    ${OrderTuple[0][2]}    退出 - 全民重疾无忧互助计划    ELSE IF    "${计划}"=="itak_product"
+    ...    Should Contain    ${OrderTuple[0][2]}    退出 - IT族安康互助计划    #校验标题

@@ -1,0 +1,50 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+校验充值交易记录
+    [Arguments]    ${ch_id}    ${phone}    ${amount}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】charge_id，用户id，充值金额
+    ...
+    ...    【说明】充值成功后检查金额、用户id、order_type是否正确
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM `order` WHERE pay_order_id="${ch_id}"
+    ${OrderTuple}    Query    SELECT uid, order_type, amount FROM `order` WHERE pay_order_id="${ch_id}"
+    #检查uid
+    Should Be Equal    ${OrderTuple[0][0]}    ${user_id}
+    #检查order_type
+    Should Be Equal    ${OrderTuple[0][1]}    9    #充值的order_type是9
+    #检查amount
+    Should Be Equal As Strings    ${OrderTuple[0][2]}    -${amount}
+
+校验提现交易记录
+    [Arguments]    ${order_id}    ${phone}    ${amount}    ${channel}    ${state}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】order_id，用户id，提现金额
+    ...
+    ...    【说明】提现成功后检查金额、channel、用户id、order_type、state是否正确
+    ...
+    ...    【其他】state \ 1=提现中，2=提现成功，3=提现失败
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM `order` WHERE order_id=${order_id}
+    ${OrderTuple}    Query    SELECT uid, order_type, channel, amount, state FROM `order` WHERE order_id=${order_id}
+    #检查uid
+    Should Be Equal    ${OrderTuple[0][0]}    ${user_id}
+    #检查order_type
+    Should Be Equal    ${OrderTuple[0][1]}    8    #提现的order_type是8
+    #检查channel
+    Should Be Equal    ${OrderTuple[0][2]}    ${channel}
+    #检查amount
+    Should Be Equal As Strings    ${OrderTuple[0][3]}    ${amount}
+    #检查state
+    Should Be Equal    ${OrderTuple[0][4]}    ${state}

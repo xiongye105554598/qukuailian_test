@@ -1,0 +1,82 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../通用/L2接口层/登录.txt
+Library           RequestsLibrary
+Library           Collections
+
+*** Keywords ***
+提现
+    [Arguments]    ${amount}    ${channel}    ${recipient}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】渠道、金额、支付宝帐号、校验key、校验value
+    ...
+    ...    【说明】提现，记录变成提现中
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/me/withdraw    channel=${channel}&amount=${amount}&recipient=${recipient}
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}
+    ${ResponseBody}    Get Response Body
+    #得到order_id
+    ${order_id}    Run Keyword If    "${value}"=="true"    得到提现orderId    ${ResponseBody}
+    [Return]    ${order_id}
+
+得到提现orderId
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】ResponseBody
+    ...
+    ...    【说明】根据提现接口返回的ResponseBody，抽取其中的orderid
+    ${order_id}    Get Json Value    ${ResponseBody}    /data
+    [Return]    ${order_id}
+
+控制台审核提现通过
+    [Arguments]    ${order_id}    ${phone}    ${amount}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】order_id、用户id、提现金额
+    ...
+    ...    【说明】提现审核成功，由于控制台手动操作返回码是302，因此该请求不校验返回码和Responsebody
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #获取控制台csrf
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置Http域名和header
+    设置Http域名
+    #设置控制台Cookies
+    ${dict}    设置控制台提现登录态的头    ${csrfCookie}    ${csrfBody}
+    #去除orderId中的引号
+    ${order_id}    Replace String    ${order_id}    \"    ${EMPTY}
+    #发送请求
+    ${multiple_files}    Create Dictionary    _csrf=(None,'${csrfBody}')
+    Create Session    withdrawsuccess    ${host}    ${dict}
+    ${res}    Post Request    withdrawsuccess    /admin/withdraw/success?orderId=${order_id}&userId=${user_id}&amount=${amount}    \    headers=${dict}    files=${multiple_files}
+    log    ${res}
+
+控制台审核提现失败
+    [Arguments]    ${order_id}    ${phone}    ${amount}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】order_id、用户id、提现金额
+    ...
+    ...    【说明】提现审核成功，由于控制台手动操作返回码是302，因此该请求不校验返回码和Responsebody
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #获取控制台csrf
+    ${csrfCookie}    ${csrfBody}    获取控制台登录页csrf值
+    获取登录态    ${consolePhone}    ${consoleCode}
+    #设置Http域名和header
+    设置Http域名
+    #设置控制台Cookies
+    ${dict}    设置控制台提现登录态的头    ${csrfCookie}    ${csrfBody}
+    #去除orderId中的引号
+    ${order_id}    Replace String    ${order_id}    \"    ${EMPTY}
+    #发送请求
+    ${multiple_files}    Create Dictionary    _csrf=(None,'${csrfBody}')
+    Create Session    withdrawsfail    ${host}    ${dict}
+    ${res}    Post Request    withdrawsfail    /admin/withdraw/fail?orderId=${order_id}&userId=${user_id}&amount=${amount}    \    headers=${dict}    files=${multiple_files}
+    log    ${res}

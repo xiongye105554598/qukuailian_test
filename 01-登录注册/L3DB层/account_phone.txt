@@ -1,0 +1,12 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+
+*** Keywords ***
+校验用户是否注册成功
+    [Arguments]    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据手机号查询account_phone表，是否存在该记录
+    连接数据库
+    #是否新增一条用户信息
+    Check If Exists In Database    SELECT * FROM account_phone WHERE phone=${Phone}

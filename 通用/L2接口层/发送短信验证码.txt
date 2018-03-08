@@ -1,0 +1,23 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+Resource          ../../资源/redis.txt
+
+*** Keywords ***
+发送短信验证码
+    [Arguments]    ${phone}    ${type}    ${key}    ${value}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】手机号、类型
+    ...
+    ...    【说明】
+    ...    REGISTER = 1;
+    ...    AUTH = 2;
+    ...    RESET_PWD = 3;
+    ...    BIND_PHONE = 4;
+    ...    LOGIN = 5;
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求
+    发送POST请求    /ajax/captcha/sendcode    phone=${phone}&captcha=&type=${type}
+    #校验返回
+    校验Http返回码和ResponseBody    200    ${key}    ${value}

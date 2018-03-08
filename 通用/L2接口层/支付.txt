@@ -1,0 +1,110 @@
+*** Settings ***
+Resource          ../../资源/Http请求.txt
+
+*** Keywords ***
+通用支付
+    [Arguments]    ${product_id}    ${insured_id}    ${pay_way}    ${client}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 通用支付请求，涵盖余额、微信支付
+    ...
+    ...    【参数】 product_id：计划类型、insured_id：保障人ID、pay_way：支付方式、client：访问方式
+    ...
+    ...    【返回值】无
+    #设置Http域名和header
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    ${redirect_url}    set variable    /payment/payresult?product_id=${product_id}&order_type=1
+    log    product_id=${product_id}&pay-way=${pay_way}&tips=on&client=${client}&ext[insured_id]=${insured_id}&order_type=1&redirect_url=\&{redirect_url}
+    发送POST请求    /ajax/order/pay    product_id=${product_id}&pay-way=${pay_way}&tips=on&client=${client}&ext[insured_id]=${insured_id}&order_type=1&redirect_url=\&{redirect_url}
+
+余额支付
+    [Arguments]    ${product_id}    ${insured_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 使用余额支付
+    ...
+    ...    【参数】 product_id：计划类型、insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用支付    ${product_id}    ${insured_id}    wx    app
+    校验Http返回码和ResponseBody    200    success    true
+
+微信支付
+    [Arguments]    ${product_id}    ${insured_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 使用Ping++模拟支付
+    ...
+    ...    【参数】 product_id：计划类型、insured_id：保障人ID
+    ...
+    ...    【返回值】 无
+    #发送请求和校验返回
+    通用支付    ${product_id}    ${insured_id}    wx_wap    mobile
+    校验Http返回码和ResponseBody    200    success    true
+    ${ResponseBody}    Get Response Body
+    log    ${ResponseBody}
+    #调用Ping++模拟支付请求
+    微信Ping++支付    ${ResponseBody}
+
+微信Ping++支付
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】该方法不发送请求，仅供订单创建后接口调用（该方法=微信模拟支付请求+微信模拟支付响应+微信支付结果查询）
+    #调用Ping++模拟支付请求
+    ${ch_id}    微信模拟支付请求    ${ResponseBody}
+    #调用Ping++模拟支付响应
+    微信模拟支付响应    ${ch_id}
+    #查询Ping++模拟支付结果
+    微信支付结果查询
+    [Return]    ${ch_id}
+
+微信模拟支付请求
+    [Arguments]    ${ResponseBody}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 Ping++模拟支付请求
+    ...
+    ...    【参数】 ResponseBody：ajax/pay请求返回的信息，可从中提取ch_id和其它需要的字段
+    ...
+    ...    【返回值】ch_id：ping++支付需要传递的字段
+    #获取需要的参数
+    ${ch_id}    Get Json Value    ${ResponseBody}    /data/id
+    ${ch_id}    Replace String    ${ch_id}    \"    ${EMPTY}
+    ${order_no}    Get Json Value    ${ResponseBody}    /data/order_no
+    ${order_no}    Replace String    ${order_no}    \"    ${EMPTY}
+    ${time_expire}    Get Json Value    ${ResponseBody}    /data/time_expire
+    #发送请求和校验返回
+    Create Http Context    sissi.pingxx.com    http
+    发送GET请求    /mock.php?ch_id=${ch_id}&scheme=http&channel=wx_wap&order_no=${order_no}&time_expire=${time_expire}&extra=%7B%22result_url%22%3A%22http%3A%2F%2Fwww.txs.com%2Fpayment%2Fpayresult%3Fproduct_id%3Dzjwy_product%26order_type%3D2%22%7D
+    校验Http返回码    200
+    [Return]    ${ch_id}
+
+微信模拟支付响应
+    [Arguments]    ${ch_id}
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 Ping++模拟支付响应
+    ...
+    ...    【参数】 ch_id：ping++支付需要传递的字段
+    ...
+    ...    【返回值】无
+    #发送请求和校验返回
+    Create Http Context    sissi.pingxx.com    http
+    发送GET请求    /notify.php?ch_id=${ch_id}
+    校验Http返回码    200
+
+微信支付结果查询
+    [Documentation]    【作者】wsong
+    ...
+    ...    【作用】 Ping++模拟支付结果查询
+    ...
+    ...    【参数】 无
+    ...
+    ...    【返回值】无
+    设置Http域名和带登录态的头
+    #发送请求和校验返回
+    发送GET请求    /payment/payresult?product_id=zjwy_product&order_type=1
+    校验Http返回码    200

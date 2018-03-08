@@ -1,0 +1,16 @@
+*** Settings ***
+Library           String
+
+*** Keywords ***
+获取列表中第一个Cookie值
+    [Arguments]    ${SourceCookie}
+    [Documentation]    【作用】适用于处理特定格式的cookie
+    ...
+    ...    【示例】
+    ...    PHPSESSID=c8l2haf4nqhv1baoisuklnbh44; path=/; HttpOnly
+    ...
+    ...    获取这串字符串中PHPSESSID的值
+    @{SourceCookies}    Split String    ${SourceCookie}    ;
+    @{PHPSESSIDCookies}    Split String    ${SourceCookies[0]}    =
+    ${PHPSESSID}    set variable    ${PHPSESSIDCookies[1]}
+    [Return]    ${PHPSESSID}

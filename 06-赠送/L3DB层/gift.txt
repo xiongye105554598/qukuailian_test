@@ -1,0 +1,132 @@
+*** Settings ***
+Resource          ../../资源/设置数据库.txt
+Resource          ../../通用/L3DB层/account_phone.txt
+
+*** Keywords ***
+根据order_id校验gift（赠送）
+    [Arguments]    ${order_id}    ${phone}    ${quantity}    ${price}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】order_id，用户手机号、赠送份数、赠送单价、赠送状态
+    ...
+    ...    【说明】根据order_id查出gift_id，再依次校验sender_id、赠送价格、赠送份数、赠送状态
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE order_id = ${order_id}
+    ${GiftTuple}    Query    SELECT sender_id, \ amount, quantity, price, state FROM gift WHERE order_id = ${order_id}
+    #检查sender_id
+    Should Be Equal    ${GiftTuple[0][0]}    ${user_id}
+    #检查赠送金额
+    ${amount}    Evaluate    ${quantity} * ${price}
+    Should Be Equal    ${GiftTuple[0][1]}    ${amount}
+    #检查赠送份数
+    Should Be Equal As Strings    ${GiftTuple[0][2]}    ${quantity}
+    #检查赠送单价
+    Should Be Equal As Strings    ${GiftTuple[0][3]}    ${price}
+    #检查赠送份数
+    Should Be Equal As Strings    ${GiftTuple[0][4]}    1    #赠送的状态为1（未领取）
+
+根据order_id查询gift_id和token
+    [Arguments]    ${order_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】order_id
+    ...
+    ...    【说明】根据order_id查询gift_id和token
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE order_id = ${order_id}
+    ${OrderTuple}    Query    SELECT id, token FROM gift WHERE order_id = ${order_id}
+    ${gift_id}    set variable    ${OrderTuple[0][0]}
+    ${token}    set variable    ${OrderTuple[0][1]}
+    [Return]    ${gift_id}    ${token}
+
+校验gift的剩余金额
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id
+    ...
+    ...    【说明】根据gift_id查出gift，再依次校验left_amount和account_gift中的已领金额是否一致
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    ${GiftTuple}    Query    SELECT quantity, price, left_amount FROM gift WHERE id = ${gift_id}
+    #查询account_gift已领金额
+    ${AccGiftTuple}    Query    SELECT SUM(amount) FROM account_gift WHERE gift_id = ${gift_id}
+    #检查left_amount
+    ${receive_amount}    Evaluate    ${GiftTuple[0][0]}*${GiftTuple[0][1]}-${GiftTuple[0][2]}
+    Should Be Equal    ${AccGiftTuple[0][0]}    ${receive_amount}
+
+校验gift的已加金额
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id
+    ...
+    ...    【说明】根据gift_id查出gift，再校验amount和account_gift中的已加入金额（state=2）是否一致
+    连接数据库
+    #是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    ${GiftTuple}    Query    SELECT quantity, price, amount FROM gift WHERE id = ${gift_id}
+    #查询account_gift已加入金额
+    ${AccGiftTuple}    Query    SELECT SUM(amount) FROM account_gift WHERE gift_id = ${gift_id} AND state=2
+    #检查left_amount
+    ${join_amount}    Evaluate    ${GiftTuple[0][0]}*${GiftTuple[0][1]}-${GiftTuple[0][2]}
+    Should Be Equal    ${AccGiftTuple[0][0]}    ${join_amount}
+
+根据token查询gift
+    [Arguments]    ${token}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【说明】根据token查询gift
+    连接数据库
+    ${GiftTuple}    Query    SELECT id FROM gift where token="${token}"
+    ${gift_id}    set variable    ${GiftTuple[0][0]}
+    [Return]    ${gift_id}
+
+修改领取赠送时间过期
+    [Arguments]    ${gift_id}    ${phone}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id
+    ...
+    ...    【说明】修改赠送过期时间，让赠送过期
+    连接数据库
+    #查询user_id
+    ${user_id}    根据手机号查UserId    ${phone}
+    #查询是否有一条记录
+    Check If Exists In Database    SELECT * FROM account_gift WHERE gift_id = ${gift_id} and user_id=${user_id}
+    ${now} =    Get Time    epoch
+    ${expire_time}    Evaluate    ${now}-25*60*60    #过期时间为25小时之前
+    Execute Sql String    update account_gift set created_at=${expire_time} WHERE gift_id = ${gift_id} and user_id=${user_id}
+
+修改赠送过期时间
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id
+    ...
+    ...    【说明】修改赠送过期时间，让赠送过期
+    连接数据库
+    #查询是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    ${now} =    Get Time    epoch
+    ${expire_time}    Evaluate    ${now}-1*60*60    #过期时间为1小时之前
+    Execute Sql String    update gift set expire_time=${expire_time} WHERE id = ${gift_id}
+
+延长赠送不过期
+    [Arguments]    ${gift_id}
+    [Documentation]    【作者】yuewang
+    ...
+    ...    【参数】gift_id
+    ...
+    ...    【说明】修改赠送过期时间，让赠送过期
+    连接数据库
+    #查询是否有一条记录
+    Check If Exists In Database    SELECT * FROM gift WHERE id = ${gift_id}
+    ${now} =    Get Time    epoch
+    ${expire_time}    Evaluate    ${now}+3*24*60*60    #过期时间为3天后
+    Execute Sql String    update gift set expire_time=${expire_time} WHERE id = ${gift_id}
